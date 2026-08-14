@@ -452,7 +452,7 @@ Your Rules and Instructions:
 5. **CRITICAL RULE FOR CODES**: Never translate or alter promo codes, URLs, domain names, or alphanumeric codes. Promo codes and technical codes must always remain in their original English/standard format, even if your explanatory sentence is in Bengali, Hindi, Tamil, Telugu, etc.`;
 
                     const response = await ai.models.generateContent({
-                        model: 'gemini-2.5-flash',
+                        model: 'gemini-1.5-flash',
                         contents: text,
                         config: {
                             systemInstruction: systemPrompt
