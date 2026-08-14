@@ -8,10 +8,10 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const token = process.env.BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 
-// Google Gemini AI Initialization with standard SDK
+// Google Gemini AI Initialization with gemini-pro (universally supported model)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const aiModel = genAI.getGenerativeModel({ 
-    model: 'gemini-1.5-flash',
+    model: 'gemini-pro',
     systemInstruction: `You are the intelligent, multilingual AI assistant for the Telegram bot of the channel **VipYonoFreeCode**.
 Your Rules and Instructions:
 1. **Dynamic Language Matching**: Automatically detect the language used by the user (whether it is Bengali, Hindi, English, Tamil, Telugu, Marathi, or any other language) and reply fluently in that exact same language.
@@ -447,7 +447,7 @@ bot.on('message', async (msg) => {
             let foundPost = getLatestPostForQuery(text);
 
             if (foundPost) {
-                await sendSingleMessage(chatId, foundPost.text, foundPost.photo, foundPost.replyMarkup);
+                await sendSingleMessage(chatId, foundpost.text, foundPost.photo, foundPost.replyMarkup);
             } else {
                 // Step 2: Handle Multilingual AI conversations and queries
                 try {
