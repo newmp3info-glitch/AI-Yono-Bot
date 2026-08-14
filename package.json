@@ -1,0 +1,14 @@
+{
+  "name": "vip-yono-bot",
+  "version": "1.0.0",
+  "description": "Telegram Yono Bot with Gemini AI",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@google/genai": "^latest",
+    "node-cron": "^latest",
+    "node-telegram-bot-api": "^latest"
+  }
+}
