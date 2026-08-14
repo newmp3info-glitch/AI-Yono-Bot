@@ -1,8 +1,9 @@
-const TelegramBot = require('node-telegram-bot-api');
-const http = require('http');
-const fs = require('fs');
-const cron = require('node-cron');
-const { GoogleGenAI } = require('@google/genai');
+import TelegramBotPkg from 'node-telegram-bot-api';
+const TelegramBot = TelegramBotPkg.default || TelegramBotPkg;
+import http from 'http';
+import fs from 'fs';
+import cron from 'node-cron';
+import { GoogleGenAI } from '@google/genai';
 
 const token = process.env.BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
