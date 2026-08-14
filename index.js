@@ -3,23 +3,21 @@ const TelegramBot = TelegramBotPkg.default || TelegramBotPkg;
 import http from 'http';
 import fs from 'fs';
 import cron from 'node-cron';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { Groq } from 'groq-sdk';
 
 const token = process.env.BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 
-// Google Gemini AI Initialization with gemini-pro (universally supported model)
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const aiModel = genAI.getGenerativeModel({ 
-    model: 'gemini-pro',
-    systemInstruction: `You are the intelligent, multilingual AI assistant for the Telegram bot of the channel **VipYonoFreeCode**.
+// Groq AI Initialization (Llama 3)
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+const systemPrompt = `You are the intelligent, multilingual AI assistant for the Telegram bot of the channel **VipYonoFreeCode**.
 Your Rules and Instructions:
 1. **Dynamic Language Matching**: Automatically detect the language used by the user (whether it is Bengali, Hindi, English, Tamil, Telugu, Marathi, or any other language) and reply fluently in that exact same language.
 2. **Bot Identity**: If anyone asks your name or who you are, state clearly that you are the official AI assistant of the **VipYonoFreeCode** channel/bot.
 3. **General Knowledge & Chat**: You can converse naturally and answer all kinds of general or specific questions in the user's preferred language.
 4. **Missing Games / Promo Code Requests**: If a user asks for a game promo code or searches for a game that is not found, politely explain to them in their language that the game is not available right now, ask them to check the spelling or provide the correct Yono game name, and remind them that this bot provides VIP Yono promo codes and links.
-5. **CRITICAL RULE FOR CODES**: Never translate or alter promo codes, URLs, domain names, or alphanumeric codes. Promo codes and technical codes must always remain in their original English/standard format, even if your explanatory sentence is in Bengali, Hindi, Tamil, Telugu, etc.`
-});
+5. **CRITICAL RULE FOR CODES**: Never translate or alter promo codes, URLs, domain names, or alphanumeric codes. Promo codes and technical codes must always remain in their original English/standard format, even if your explanatory sentence is in Bengali, Hindi, Tamil, Telugu, etc.`;
 
 const TARGET_CHANNEL = '@VipYonoFreeCode';
  
@@ -100,7 +98,7 @@ async function sendSingleMessage(chatId, text, photo, replyMarkup) {
 
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Bot is running successfully with Multilingual AI & Promo features!\n');
+    res.end('Bot is running successfully with Groq Llama AI & Promo features!\n');
 });
 
 const PORT = process.env.PORT || 3000;
@@ -447,20 +445,26 @@ bot.on('message', async (msg) => {
             let foundPost = getLatestPostForQuery(text);
 
             if (foundPost) {
-                await sendSingleMessage(chatId, foundpost.text, foundPost.photo, foundPost.replyMarkup);
+                await sendSingleMessage(chatId, foundPost.text, foundPost.photo, foundPost.replyMarkup);
             } else {
-                // Step 2: Handle Multilingual AI conversations and queries
+                // Step 2: Handle Multilingual AI conversations using Groq Llama 3
                 try {
                     await bot.sendChatAction(chatId, 'typing');
 
-                    const result = await aiModel.generateContent(text);
-                    const response = await result.response;
-                    const aiReply = response.text() || "Sorry, I couldn't process that request right now.";
+                    const completion = await groq.chat.completions.create({
+                        messages: [
+                            { role: "system", content: systemPrompt },
+                            { role: "user", content: text }
+                        ],
+                        model: "llama-3.3-70b-versatile",
+                    });
+
+                    const aiReply = completion.choices[0]?.message?.content || "Sorry, I couldn't process that request right now.";
                     
                     await sendSingleMessage(chatId, aiReply, null, null);
 
                 } catch (aiErr) {
-                    console.error("AI Generation Error:", aiErr.message);
+                    console.error("Groq AI Generation Error:", aiErr.message);
                     const fallbackMessage = `❌ <b>Game not found or AI error occurred!</b>\n\n💡 <i>Please send the correct Yono game name to get instant VIP promo codes.</i>`;
                     await sendSingleMessage(chatId, fallbackMessage, null, null);
                 }
@@ -488,4 +492,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Bot running with Multilingual AI support and VipYonoFreeCode branding!");
+console.log("Bot running successfully with Groq Llama AI support!");
