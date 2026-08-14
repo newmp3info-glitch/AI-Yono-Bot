@@ -1,14 +1,14 @@
 {
   "name": "ai-yono-bot",
   "version": "1.0.0",
-  "description": "Telegram Yono Bot with Gemini AI",
+  "description": "Telegram Yono Bot with Groq Llama AI",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "@google/generative-ai": "latest",
+    "groq-sdk": "latest",
     "node-cron": "latest",
     "node-telegram-bot-api": "latest"
   }
