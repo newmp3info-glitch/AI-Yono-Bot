@@ -364,7 +364,7 @@ function getLatestPostForQuery(userQuery) {
         if (b.score !== a.score) {
             return b.score - a.score;
         }
-        return (b.post.timestamp || 0) - (a.post.timestamp || 0);
+        return (b.post.timestamp || 0) - (b.post.timestamp || 0);
     });
 
     return validMatches[0].post;
@@ -452,7 +452,7 @@ Your Rules and Instructions:
 5. **CRITICAL RULE FOR CODES**: Never translate or alter promo codes, URLs, domain names, or alphanumeric codes. Promo codes and technical codes must always remain in their original English/standard format, even if your explanatory sentence is in Bengali, Hindi, Tamil, Telugu, etc.`;
 
                     const response = await ai.models.generateContent({
-                        model: 'gemini-2.0-flash',
+                        model: 'gemini-2.5-flash',
                         contents: text,
                         config: {
                             systemInstruction: systemPrompt
