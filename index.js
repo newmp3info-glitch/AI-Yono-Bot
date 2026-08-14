@@ -3,13 +3,23 @@ const TelegramBot = TelegramBotPkg.default || TelegramBotPkg;
 import http from 'http';
 import fs from 'fs';
 import cron from 'node-cron';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const token = process.env.BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 
-// Google Gemini AI Initialization
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Google Gemini AI Initialization with standard SDK
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const aiModel = genAI.getGenerativeModel({ 
+    model: 'gemini-1.5-flash',
+    systemInstruction: `You are the intelligent, multilingual AI assistant for the Telegram bot of the channel **VipYonoFreeCode**.
+Your Rules and Instructions:
+1. **Dynamic Language Matching**: Automatically detect the language used by the user (whether it is Bengali, Hindi, English, Tamil, Telugu, Marathi, or any other language) and reply fluently in that exact same language.
+2. **Bot Identity**: If anyone asks your name or who you are, state clearly that you are the official AI assistant of the **VipYonoFreeCode** channel/bot.
+3. **General Knowledge & Chat**: You can converse naturally and answer all kinds of general or specific questions in the user's preferred language.
+4. **Missing Games / Promo Code Requests**: If a user asks for a game promo code or searches for a game that is not found, politely explain to them in their language that the game is not available right now, ask them to check the spelling or provide the correct Yono game name, and remind them that this bot provides VIP Yono promo codes and links.
+5. **CRITICAL RULE FOR CODES**: Never translate or alter promo codes, URLs, domain names, or alphanumeric codes. Promo codes and technical codes must always remain in their original English/standard format, even if your explanatory sentence is in Bengali, Hindi, Tamil, Telugu, etc.`
+});
 
 const TARGET_CHANNEL = '@VipYonoFreeCode';
  
@@ -364,7 +374,7 @@ function getLatestPostForQuery(userQuery) {
         if (b.score !== a.score) {
             return b.score - a.score;
         }
-        return (b.post.timestamp || 0) - (b.post.timestamp || 0);
+        return (b.post.timestamp || 0) - (a.post.timestamp || 0);
     });
 
     return validMatches[0].post;
@@ -443,23 +453,10 @@ bot.on('message', async (msg) => {
                 try {
                     await bot.sendChatAction(chatId, 'typing');
 
-                    const systemPrompt = `You are the intelligent, multilingual AI assistant for the Telegram bot of the channel **VipYonoFreeCode**.
-Your Rules and Instructions:
-1. **Dynamic Language Matching**: Automatically detect the language used by the user (whether it is Bengali, Hindi, English, Tamil, Telugu, Marathi, or any other language) and reply fluently in that exact same language.
-2. **Bot Identity**: If anyone asks your name or who you are, state clearly that you are the official AI assistant of the **VipYonoFreeCode** channel/bot.
-3. **General Knowledge & Chat**: You can converse naturally and answer all kinds of general or specific questions in the user's preferred language.
-4. **Missing Games / Promo Code Requests**: If a user asks for a game promo code or searches for a game that is not found, politely explain to them in their language that the game is not available right now, ask them to check the spelling or provide the correct Yono game name, and remind them that this bot provides VIP Yono promo codes and links.
-5. **CRITICAL RULE FOR CODES**: Never translate or alter promo codes, URLs, domain names, or alphanumeric codes. Promo codes and technical codes must always remain in their original English/standard format, even if your explanatory sentence is in Bengali, Hindi, Tamil, Telugu, etc.`;
-
-                    const response = await ai.models.generateContent({
-                        model: 'gemini-2.5-flash',
-                        contents: text,
-                        config: {
-                            systemInstruction: systemPrompt
-                        }
-                    });
-
-                    const aiReply = response.text || "Sorry, I couldn't process that request right now.";
+                    const result = await aiModel.generateContent(text);
+                    const response = await result.response;
+                    const aiReply = response.text() || "Sorry, I couldn't process that request right now.";
+                    
                     await sendSingleMessage(chatId, aiReply, null, null);
 
                 } catch (aiErr) {
