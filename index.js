@@ -8,16 +8,16 @@ import { Groq } from 'groq-sdk';
 const token = process.env.BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 
-// Groq AI Initialization (Llama 3)
+// Groq AI Initialization (Llama 3) for Anu MasterBot
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const systemPrompt = `You are the intelligent, multilingual AI assistant for the Telegram bot of the channel Yono Mastar Bot.
-Your Rules and Instructions:
-1. **Dynamic Language Matching**: Automatically detect the language used by the user (whether it is Bengali, Hindi, English, Tamil, Telugu, Marathi, or any other language) and reply fluently in that exact same language.
-2. **Bot Identity**: If anyone asks your name or who you are, state clearly that you are the official AI assistant of the Yono Mastar Bot channel/bot.
-3. **General Knowledge & Chat**: You can converse naturally and answer all kinds of general or specific questions in the user's preferred language.
-4. **Missing Games / Promo Code Requests**: If a user asks for a game promo code or searches for a game that is not found, politely explain to them in their language that the game is not available right now, ask them to check the spelling or provide the correct Yono game name, and remind them that this bot provides VIP Yono promo codes and links.
-5. **CRITICAL RULE FOR CODES**: Never translate or alter promo codes, URLs, domain names, or alphanumeric codes. Promo codes and technical codes must always remain in their original English/standard format, even if your explanatory sentence is in Bengali, Hindi, Tamil, Telugu, etc.`;
+const systemPrompt = `You are the intelligent, multilingual AI assistant for the Telegram bot Yono Master Bot.
+Your Strict Rules and Instructions:
+1. **Dynamic Language Matching**: Automatically detect the language used by the user (whether it is Bengali, Hindi, English, etc.) and reply fluently in that exact same language.
+2. **Bot Identity**: If anyone asks your name or who you are, state clearly that you are the official AI assistant of Yono Master Bot.
+3. **Promo Codes & Database Search**: This bot provides VIP Yono and Rummy promo codes and links (including games like Anurami, etc.). When a user asks for a game code or game name, the bot searches the saved database to send the correct post.
+4. **Wrong Spelling / Game Not Found**: If a user types a wrong spelling, incorrect game name, or asks for a game that is not available, you must politely tell them in their language to check the correct game name and spelling (e.g., "দয়া করে সঠিক গেমের নাম দেখে লিখুন" in Bengali).
+5. **CRITICAL RULE FOR CODES**: Never translate or alter promo codes, URLs, domain names, or alphanumeric codes. Promo codes and technical codes must always remain in their original English/standard format, even if your explanatory sentence is in Bengali, Hindi, etc.`;
 
 const TARGET_CHANNEL = '@VipYonoFreeCode';
  
@@ -98,7 +98,7 @@ async function sendSingleMessage(chatId, text, photo, replyMarkup) {
 
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Bot is running successfully with Groq Llama AI & Promo features!\n');
+    res.end('Anu MasterBot is running successfully!\n');
 });
 
 const PORT = process.env.PORT || 3000;
@@ -403,8 +403,8 @@ bot.on('message', async (msg) => {
 
     if (text) {
         if (text.startsWith('/start')) {
-            const welcomeText = `<b>Welcome to VipYonoFreeCode Bot!</b>\n\n` +
-                `🤖 I am your AI assistant. You can chat with me in any language (Bengali, Hindi, English, Tamil, Telugu, etc.) or search for any Yono Game name to get instant VIP promo codes!`;
+            const welcomeText = `<b>Welcome to Anu MasterBot!</b>\n\n` +
+                `🤖 I am your AI assistant. You can chat with me in any language or search for any Yono/Rummy Game name (like Anurami, etc.) to get instant VIP promo codes!`;
             
             try {
                 let newMsgIds = [];
@@ -441,13 +441,13 @@ bot.on('message', async (msg) => {
             }
 
         } else {
-            // Step 1: Check database for Yono game promo codes
+            // Step 1: Check database for game promo codes (like Anurami or any Rummy/Yono game)
             let foundPost = getLatestPostForQuery(text);
 
             if (foundPost) {
                 await sendSingleMessage(chatId, foundPost.text, foundPost.photo, foundPost.replyMarkup);
             } else {
-                // Step 2: Handle Multilingual AI conversations using Groq Llama 3
+                // Step 2: Handle AI conversation or wrong spelling guidance
                 try {
                     await bot.sendChatAction(chatId, 'typing');
 
@@ -459,13 +459,13 @@ bot.on('message', async (msg) => {
                         model: "llama-3.3-70b-versatile",
                     });
 
-                    const aiReply = completion.choices[0]?.message?.content || "Sorry, I couldn't process that request right now.";
+                    const aiReply = completion.choices[0]?.message?.content || "দয়া করে সঠিক গেমের নাম দেখে লিখুন।";
                     
                     await sendSingleMessage(chatId, aiReply, null, null);
 
                 } catch (aiErr) {
-                    console.error("Groq AI Generation Error:", aiErr.message);
-                    const fallbackMessage = `❌ <b>Game not found or AI error occurred!</b>\n\n💡 <i>Please send the correct Yono game name to get instant VIP promo codes.</i>`;
+                    console.error("Groq AI Error:", aiErr.message);
+                    const fallbackMessage = `❌ <b>গেমটি পাওয়া যায়নি!</b>\n\n💡 <i>দয়া করে সঠিক গেমের নাম ও বানান চেক করে লিখুন।</i>`;
                     await sendSingleMessage(chatId, fallbackMessage, null, null);
                 }
             }
@@ -474,12 +474,11 @@ bot.on('message', async (msg) => {
 });
 
 const weeklyMessage = `⚡ <b>WEEKLY VIP BONUS ALERT!</b> ⚡\n\n` +
-    `🎁 <b>New Yono Promo Codes Are Now Live!</b>\n\n` +
-    `Hey Gamer! Hundreds of fresh & active promo codes for <b>ALL YONO GAMES</b> have just been updated! Don't let your free bonuses expire! 💰\n\n` +
+    `🎁 <b>New Promo Codes Are Now Live!</b>\n\n` +
+    `Hey Gamer! Hundreds of fresh & active promo codes have just been updated in <b>Yono Master Bot</b>! Don't let your free bonuses expire! 💰\n\n` +
     `🔥 <b>WHAT TO DO RIGHT NOW:</b>\n` +
-    `• 🎮 Type & search <b>ANY Yono Game Name</b> in this chat right now!\n` +
-    `• 💎 Claim your daily signup & deposit promo codes instantly!\n` +
-    `• 🔔 Keep your notifications <b>ON</b> so you never miss a fast-claim code drop!\n\n` +
+    `• 🎮 Type & search <b>ANY Game Name (like Anurami, etc.)</b> in this chat right now!\n` +
+    `• 💎 Claim your daily signup & deposit promo codes instantly!\n\n` +
     `👑 <i>Type your favorite game name below and grab your free code now! 🚀</i>`;
 
 cron.schedule('0 10 * * 0', () => {
@@ -492,4 +491,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Bot running successfully with Groq Llama AI support!");
+console.log("Anu MasterBot running successfully!");
