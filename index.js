@@ -11,13 +11,13 @@ const bot = new TelegramBot(token, { polling: true });
 // Groq AI Initialization (Llama 3) for Anu MasterBot
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const systemPrompt = `You are the intelligent, multilingual AI assistant for the Telegram bot Yono Master Bot.
+const systemPrompt = `You are the intelligent, multilingual AI assistant for the Telegram bot **Anu MasterBot**.
 Your Strict Rules and Instructions:
 1. **Dynamic Language Matching**: Automatically detect the language used by the user (whether it is Bengali, Hindi, English, etc.) and reply fluently in that exact same language.
-2. **Bot Identity**: If anyone asks your name or who you are, state clearly that you are the official AI assistant of Yono Master Bot.
-3. **Promo Codes & Database Search**: This bot provides VIP Yono and Rummy promo codes and links (including games like Anurami, etc.). When a user asks for a game code or game name, the bot searches the saved database to send the correct post.
-4. **Wrong Spelling / Game Not Found**: If a user types a wrong spelling, incorrect game name, or asks for a game that is not available, you must politely tell them in their language to check the correct game name and spelling (e.g., "দয়া করে সঠিক গেমের নাম দেখে লিখুন" in Bengali).
-5. **CRITICAL RULE FOR CODES**: Never translate or alter promo codes, URLs, domain names, or alphanumeric codes. Promo codes and technical codes must always remain in their original English/standard format, even if your explanatory sentence is in Bengali, Hindi, etc.`;
+2. **Bot Identity**: If anyone asks your name or who you are, state clearly that you are the official AI assistant of **Anu MasterBot**.
+3. **STRICT YONO & RUMMY ONLY POLICY (CRITICAL)**: This bot provides VIP promo codes and links ONLY for Yono and Rummy games (around 60-65 apps). **If a user asks for promo codes or mentions any non-Yono/non-Rummy game, other companies' games, or popular games like Free Fire, Free Fire Max, PUBG, Ludo, or anything outside Yono/Rummy**, you MUST strictly and clearly tell them in their language that **this bot only provides Yono and Rummy game promo codes, and no other company's or game's codes (like Free Fire or PUBG) are available here.** State firmly that only Yono/Rummy games are supported.
+4. **Wrong Spelling / Game Not Found**: If a user types an incorrect game name or spelling that does not match our Yono/Rummy list, politely tell them in their language to check the correct game name and spelling.
+5. **CRITICAL RULE FOR CODES**: Never translate or alter promo codes, URLs, domain names, or alphanumeric codes. Promo codes and technical codes must always remain in their original English/standard format.`;
 
 const TARGET_CHANNEL = '@VipYonoFreeCode';
  
@@ -98,7 +98,7 @@ async function sendSingleMessage(chatId, text, photo, replyMarkup) {
 
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Anu MasterBot is running successfully!\n');
+    res.end('Anu MasterBot is running successfully with strict matching!\n');
 });
 
 const PORT = process.env.PORT || 3000;
@@ -185,7 +185,6 @@ function smartFormatPost(text, entities, timestamp) {
         }
 
         let isGameListItem = trimmed.startsWith('•') || trimmed.startsWith('▪️') || trimmed.startsWith('🔸');
-
         let isDownloadLine = (lower.includes('download now') || lower.includes('game link') || (lower.includes('link') && !lower.includes('promo')));
         
         let isQuoteLine = !isGameListItem && !isDownloadLine && (
@@ -333,49 +332,45 @@ bot.on('channel_post', (msg) => {
     }
 });
 
+// Strict Query Matcher: Only returns post if a significant part of the game name matches precisely
 function getLatestPostForQuery(userQuery) {
     if (!postDatabase.all_posts || postDatabase.all_posts.length === 0) {
         return null;
     }
 
     const cleanQuery = userQuery.trim().toLowerCase();
-    if (cleanQuery.length < 2) return null;
+    // Block common non-game or external game queries from database lookup
+    if (cleanQuery.includes('free fire') || cleanQuery.includes('pubg') || cleanQuery.includes('ludo') || cleanQuery.includes('ff max')) {
+        return null;
+    }
 
-    const queryTokens = cleanQuery.replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(t => t.length > 1);
-    if (queryTokens.length === 0) return null;
+    if (cleanQuery.length < 3) return null;
 
-    let scoredPosts = postDatabase.all_posts.map(post => {
-        if (!post.text) return { post, score: 0 };
+    let matchedPost = null;
+    let highestScore = 0;
+
+    postDatabase.all_posts.forEach(post => {
+        if (!post.text) return;
         let lowerText = post.text.toLowerCase();
-        let cleanText = lowerText.replace(/[^a-z0-9\s]/g, '');
         
+        // Extract the game title line (usually the first line of the post)
+        let firstLine = lowerText.split('\n')[0].replace(/[^a-z0-9\s]/g, '').trim();
+        let queryClean = cleanQuery.replace(/[^a-z0-9\s]/g, '').trim();
+
         let score = 0;
-        let fullQueryClean = cleanQuery.replace(/[^a-z0-9]/g, '');
-
-        if (cleanText.includes(fullQueryClean)) {
-            score += 100;
+        if (firstLine.includes(queryClean)) {
+            score = 100; // Strong match on game title
+        } else if (lowerText.includes(queryClean)) {
+            score = 50; // Match inside body
         }
 
-        queryTokens.forEach(token => {
-            if (cleanText.includes(token)) {
-                score += 15;
-            }
-        });
-
-        return { post, score };
-    });
-
-    let validMatches = scoredPosts.filter(item => item.score > 10);
-    if (validMatches.length === 0) return null;
-
-    validMatches.sort((a, b) => {
-        if (b.score !== a.score) {
-            return b.score - a.score;
+        if (score > highestScore) {
+            highestScore = score;
+            matchedPost = post;
         }
-        return (b.post.timestamp || 0) - (a.post.timestamp || 0);
     });
 
-    return validMatches[0].post;
+    return highestScore >= 50 ? matchedPost : null;
 }
 
 bot.on('message', async (msg) => {
@@ -404,7 +399,7 @@ bot.on('message', async (msg) => {
     if (text) {
         if (text.startsWith('/start')) {
             const welcomeText = `<b>Welcome to Anu MasterBot!</b>\n\n` +
-                `🤖 I am your AI assistant. You can chat with me in any language or search for any Yono/Rummy Game name (like Anurami, etc.) to get instant VIP promo codes!`;
+                `🤖 I am your AI assistant. You can chat with me or search for any Yono/Rummy Game name to get instant VIP promo codes!`;
             
             try {
                 let newMsgIds = [];
@@ -441,13 +436,13 @@ bot.on('message', async (msg) => {
             }
 
         } else {
-            // Step 1: Check database for game promo codes (like Anurami or any Rummy/Yono game)
+            // Step 1: Check database using strict game matching
             let foundPost = getLatestPostForQuery(text);
 
             if (foundPost) {
                 await sendSingleMessage(chatId, foundPost.text, foundPost.photo, foundPost.replyMarkup);
             } else {
-                // Step 2: Handle AI conversation or wrong spelling guidance
+                // Step 2: Handle AI conversation (Free Fire, PUBG, wrong spelling -> AI will answer strictly based on rules)
                 try {
                     await bot.sendChatAction(chatId, 'typing');
 
@@ -465,7 +460,7 @@ bot.on('message', async (msg) => {
 
                 } catch (aiErr) {
                     console.error("Groq AI Error:", aiErr.message);
-                    const fallbackMessage = `❌ <b>গেমটি পাওয়া যায়নি!</b>\n\n💡 <i>দয়া করে সঠিক গেমের নাম ও বানান চেক করে লিখুন।</i>`;
+                    const fallbackMessage = `❌ <b>গেমটি পাওয়া যায়নি!</b>\n\n💡 <i>এই বটে শুধুমাত্র Yono এবং Rummy গেমের কোড পাওয়া যায়। দয়া করে সঠিক গেমের নাম দেখে লিখুন।</i>`;
                     await sendSingleMessage(chatId, fallbackMessage, null, null);
                 }
             }
@@ -475,9 +470,9 @@ bot.on('message', async (msg) => {
 
 const weeklyMessage = `⚡ <b>WEEKLY VIP BONUS ALERT!</b> ⚡\n\n` +
     `🎁 <b>New Promo Codes Are Now Live!</b>\n\n` +
-    `Hey Gamer! Hundreds of fresh & active promo codes have just been updated in <b>Yono Master Bot</b>! Don't let your free bonuses expire! 💰\n\n` +
+    `Hey Gamer! Hundreds of fresh & active promo codes have just been updated in <b>Anu MasterBot</b>! Don't let your free bonuses expire! 💰\n\n` +
     `🔥 <b>WHAT TO DO RIGHT NOW:</b>\n` +
-    `• 🎮 Type & search <b>ANY Game Name (like Anurami, etc.)</b> in this chat right now!\n` +
+    `• 🎮 Type & search <b>ANY Yono/Rummy Game Name</b> in this chat right now!\n` +
     `• 💎 Claim your daily signup & deposit promo codes instantly!\n\n` +
     `👑 <i>Type your favorite game name below and grab your free code now! 🚀</i>`;
 
@@ -491,4 +486,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Anu MasterBot running successfully!");
+console.log("Anu MasterBot running successfully with strict query filter!");
