@@ -1,7 +1,6 @@
 import TelegramBotPkg from 'node-telegram-bot-api';
 const TelegramBot = TelegramBotPkg.default || TelegramBotPkg;
 import http from 'http';
-import https from 'https';
 import fs from 'fs';
 import path from 'path';
 import cron from 'node-cron';
@@ -422,43 +421,15 @@ bot.on('message', async (msg) => {
         }
     }
 
-    // Handle Image / Screenshot OCR Recognition with Robust File Downloading & Language Detection
+    // Handle Image / Screenshot OCR Recognition via Direct Telegram File URL
     if (msg.photo && msg.photo.length > 0) {
-        let filePath = null;
         const userLangCode = msg.from?.language_code || 'en';
         try {
             await bot.sendChatAction(chatId, 'typing');
             const fileId = msg.photo[msg.photo.length - 1].file_id;
             
-            // Reliable file link retrieval using Telegram API wrapper
+            // Fetch direct file URL securely from Telegram API wrapper
             const fileUrl = await bot.getFileLink(fileId);
-            
-            filePath = path.join('./', `temp_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`);
-            
-            await new Promise((resolve, reject) => {
-                const fileStream = fs.createWriteStream(filePath);
-                https.get(fileUrl, (response) => {
-                    if (response.statusCode !== 200) {
-                        reject(new Error(`Failed to download image, status code: ${response.statusCode}`));
-                        return;
-                    }
-                    response.pipe(fileStream);
-                    fileStream.on('finish', () => {
-                        fileStream.close();
-                        resolve();
-                    });
-                }).on('error', (err) => {
-                    reject(err);
-                });
-            });
-
-            const imageBuffer = fs.readFileSync(filePath);
-            const base64Image = imageBuffer.toString('base64');
-            const dataUrl = `data:image/jpeg;base64,${base64Image}`;
-
-            if (fs.existsSync(filePath)) {
-                fs.unlink(filePath, () => {});
-            }
 
             const visionCompletion = await groq.chat.completions.create({
                 model: "llama-3.2-11b-vision-preview",
@@ -473,7 +444,7 @@ bot.on('message', async (msg) => {
                             {
                                 type: "image_url",
                                 image_url: {
-                                    url: dataUrl
+                                    url: fileUrl
                                 }
                             }
                         ]
@@ -497,16 +468,13 @@ bot.on('message', async (msg) => {
                 model: "llama-3.3-70b-versatile",
                 messages: [
                     { role: "system", content: systemPrompt },
-                    { role: "user", content: `The user sent an image (User Language Code: ${userLangCode}), but no matching game code was found in database. Reply politely in the user's language (${userLangCode}) stating that this bot only provides Yono and Rummy promo codes and ask them to send the correct game name or screenshot.` }
+                    { role: "user", content: `The user sent an image (User Language Code: ${userLangCode}), but no matching game code was found in database for detected name "${detectedGameName}". Reply politely in the user's language (${userLangCode}) stating that this bot only provides Yono and Rummy promo codes and ask them to send the correct game name or screenshot.` }
                 ]
             });
             let aiReply = completion.choices[0]?.message?.content || "Please send a valid Yono or Rummy game name or screenshot.";
             await sendSingleMessage(chatId, aiReply, null, null);
 
         } catch (imgErr) {
-            if (filePath && fs.existsSync(filePath)) {
-                try { fs.unlinkSync(filePath); } catch (e) {}
-            }
             console.error("Image OCR Error:", imgErr.message);
             const completion = await groq.chat.completions.create({
                 model: "llama-3.3-70b-versatile",
@@ -585,4 +553,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Bot running successfully with Vision OCR & Multilingual support!");
+console.log("Yono Master Bot running successfully with Direct Vision OCR & Multilingual support!");
