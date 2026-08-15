@@ -15,7 +15,7 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const systemPrompt = `You are the intelligent, multilingual AI assistant for the Telegram bot Yono Master Bot.
 Your Strict Rules and Instructions:
-1. **Strict Language Matching (CRITICAL)**: Reply strictly in the exact same language that the user uses in their message. If the user types in English, you MUST reply in English. If the user types in Bengali, reply in Bengali. Never switch languages unnecessarily.
+1. **Strict Language Matching (CRITICAL)**: Reply strictly in the exact same language that the user uses in their message or based on their provided language context. If the user types or communicates in English, you MUST reply in English. If the user types in Bengali, reply in Bengali. Never switch languages unnecessarily.
 2. **Bot Identity**: If anyone asks your name or who you are, state clearly that you are the official AI assistant of Yono Master Bot.
 3. **NEVER ASK FOR USER ID OR PERSONAL DATA (CRITICAL)**: Under no circumstances should you ever ask the user for their user ID, account ID, password, phone number, or any personal information. Users may get scared if you ask for IDs. If a game code is not found or not in the database, simply state that the promo code is currently unavailable or ask them to check the correct game name. Never ask for their ID.
 4. **STRICT YONO & RUMMY ONLY POLICY**: This bot provides VIP promo codes and links ONLY for Yono and Rummy games. If a user asks for Free Fire, PUBG, or any non-Yono game, clearly tell them in their language that only Yono/Rummy codes are available here.
@@ -422,28 +422,32 @@ bot.on('message', async (msg) => {
         }
     }
 
-    // Handle Image / Screenshot OCR Recognition with HTTPS File Downloading
+    // Handle Image / Screenshot OCR Recognition with Robust File Downloading & Language Detection
     if (msg.photo && msg.photo.length > 0) {
         let filePath = null;
+        const userLangCode = msg.from?.language_code || 'en';
         try {
             await bot.sendChatAction(chatId, 'typing');
             const fileId = msg.photo[msg.photo.length - 1].file_id;
             
-            const fileObj = await bot.getFile(fileId);
-            const fileUrl = `https://api.telegram.org/file/bot${token}/${fileObj.file_path}`;
+            // Reliable file link retrieval using Telegram API wrapper
+            const fileUrl = await bot.getFileLink(fileId);
             
-            filePath = path.join('./', `temp_${Date.now()}.jpg`);
+            filePath = path.join('./', `temp_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`);
             
             await new Promise((resolve, reject) => {
                 const fileStream = fs.createWriteStream(filePath);
                 https.get(fileUrl, (response) => {
+                    if (response.statusCode !== 200) {
+                        reject(new Error(`Failed to download image, status code: ${response.statusCode}`));
+                        return;
+                    }
                     response.pipe(fileStream);
                     fileStream.on('finish', () => {
                         fileStream.close();
                         resolve();
                     });
                 }).on('error', (err) => {
-                    fs.unlink(filePath, () => {});
                     reject(err);
                 });
             });
@@ -452,7 +456,9 @@ bot.on('message', async (msg) => {
             const base64Image = imageBuffer.toString('base64');
             const dataUrl = `data:image/jpeg;base64,${base64Image}`;
 
-            fs.unlink(filePath, () => {});
+            if (fs.existsSync(filePath)) {
+                fs.unlink(filePath, () => {});
+            }
 
             const visionCompletion = await groq.chat.completions.create({
                 model: "llama-3.2-11b-vision-preview",
@@ -462,7 +468,7 @@ bot.on('message', async (msg) => {
                         content: [
                             {
                                 type: "text",
-                                text: "Extract the exact game name or app title visible in this image. Reply with ONLY the game name, nothing else. If no game name is visible, reply with 'UNKNOWN'."
+                                text: "Extract the exact game name or app title visible in this image (e.g., Yono Rummy, Teen Patti, etc.). Reply with ONLY the game name, nothing else. If no game name is visible, reply with 'UNKNOWN'."
                             },
                             {
                                 type: "image_url",
@@ -488,26 +494,26 @@ bot.on('message', async (msg) => {
             }
 
             const completion = await groq.chat.completions.create({
+                model: "llama-3.3-70b-versatile",
                 messages: [
                     { role: "system", content: systemPrompt },
-                    { role: "user", content: "The user sent an image, but no matching game code was found in database. Reply politely in the user's language stating that this bot only provides Yono and Rummy promo codes and ask them to send the correct game name or screenshot." }
-                ],
-                model: "llama-3.3-70b-versatile",
+                    { role: "user", content: `The user sent an image (User Language Code: ${userLangCode}), but no matching game code was found in database. Reply politely in the user's language (${userLangCode}) stating that this bot only provides Yono and Rummy promo codes and ask them to send the correct game name or screenshot.` }
+                ]
             });
             let aiReply = completion.choices[0]?.message?.content || "Please send a valid Yono or Rummy game name or screenshot.";
             await sendSingleMessage(chatId, aiReply, null, null);
 
         } catch (imgErr) {
             if (filePath && fs.existsSync(filePath)) {
-                fs.unlink(filePath, () => {});
+                try { fs.unlinkSync(filePath); } catch (e) {}
             }
             console.error("Image OCR Error:", imgErr.message);
             const completion = await groq.chat.completions.create({
+                model: "llama-3.3-70b-versatile",
                 messages: [
                     { role: "system", content: systemPrompt },
-                    { role: "user", content: "The user sent an image, but an error occurred while processing it. Reply politely in the user's language asking them to send the game name as text." }
-                ],
-                model: "llama-3.3-70b-versatile",
+                    { role: "user", content: `The user sent an image (User Language Code: ${userLangCode}), but an error occurred while processing it. Reply politely in the user's language (${userLangCode}) asking them to send the game name as text.` }
+                ]
             });
             let aiReply = completion.choices[0]?.message?.content || "Please send the game name as text.";
             await sendSingleMessage(chatId, aiReply, null, null);
@@ -579,4 +585,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Bot running successfully with Vision OCR!");
+console.log("Yono Master Bot running successfully with Vision OCR & Multilingual support!");
