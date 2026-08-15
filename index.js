@@ -8,7 +8,7 @@ import { Groq } from 'groq-sdk';
 const token = process.env.BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 
-// Groq AI Initialization (Llama 3) for Anu MasterBot
+// Groq AI Initialization for Yono Master Bot
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const systemPrompt = `You are the intelligent, multilingual AI assistant for the Telegram bot Yono Master Bot.
@@ -98,7 +98,7 @@ async function sendSingleMessage(chatId, text, photo, replyMarkup) {
 
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Anu MasterBot is running successfully!\n');
+    res.end('Yono Master Bot is running successfully!\n');
 });
 
 const PORT = process.env.PORT || 3000;
@@ -342,7 +342,7 @@ function getLatestPostForQuery(userQuery) {
         return null;
     }
 
-    if (cleanQuery.length < 3) return null;
+    if (cleanQuery.length < 2) return null;
 
     let matchedPost = null;
     let highestScore = 0;
@@ -370,9 +370,36 @@ function getLatestPostForQuery(userQuery) {
     return highestScore >= 50 ? matchedPost : null;
 }
 
+async function handleUserQuery(chatId, queryText) {
+    let foundPost = getLatestPostForQuery(queryText);
+
+    if (foundPost) {
+        await sendSingleMessage(chatId, foundPost.text, foundPost.photo, foundPost.replyMarkup);
+    } else {
+        try {
+            await bot.sendChatAction(chatId, 'typing');
+
+            const completion = await groq.chat.completions.create({
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: queryText }
+                ],
+                model: "llama-3.3-70b-versatile",
+            });
+
+            const aiReply = completion.choices[0]?.message?.content || "Please check the correct game name.";
+            await sendSingleMessage(chatId, aiReply, null, null);
+
+        } catch (aiErr) {
+            console.error("Groq AI Error:", aiErr.message);
+            const fallbackMessage = `❌ <b>Game not found!</b>\n\n💡 <i>This bot only provides Yono and Rummy promo codes. Please type the correct game name.</i>`;
+            await sendSingleMessage(chatId, fallbackMessage, null, null);
+        }
+    }
+}
+
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
-    const text = msg.text;
 
     if (!botUsers.includes(chatId) && chatId) {
         botUsers.push(chatId);
@@ -393,10 +420,68 @@ bot.on('message', async (msg) => {
         }
     }
 
-    if (text) {
-        if (text.startsWith('/start')) {
+    // Handle Image / Screenshot OCR Recognition
+    if (msg.photo && msg.photo.length > 0) {
+        try {
+            await bot.sendChatAction(chatId, 'typing');
+            const fileId = msg.photo[msg.photo.length - 1].file_id;
+            const fileLink = await bot.getFileLink(fileId);
+
+            const visionCompletion = await groq.chat.completions.create({
+                model: "llama-3.2-11b-vision-preview",
+                messages: [
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "text",
+                                text: "Extract the exact game name or app title visible in this image. Reply with ONLY the game name, nothing else. If no game name is visible, reply with 'UNKNOWN'."
+                            },
+                            {
+                                type: "image_url",
+                                image_url: {
+                                    url: fileLink
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens: 30
+            });
+
+            let detectedGameName = visionCompletion.choices[0]?.message?.content?.trim() || "";
+            console.log(`Detected game from screenshot: ${detectedGameName}`);
+
+            if (detectedGameName && detectedGameName !== "UNKNOWN" && detectedGameName.length > 1) {
+                let foundPost = getLatestPostForQuery(detectedGameName);
+                if (foundPost) {
+                    await sendSingleMessage(chatId, foundPost.text, foundPost.photo, foundPost.replyMarkup);
+                    return;
+                }
+            }
+
+            const completion = await groq.chat.completions.create({
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: "The user sent an image, but no matching game code was found in database. Reply politely in the user's language stating that this bot only provides Yono and Rummy promo codes and ask them to send the correct game name or screenshot." }
+                ],
+                model: "llama-3.3-70b-versatile",
+            });
+            let aiReply = completion.choices[0]?.message?.content || "Please send a valid Yono or Rummy game name or screenshot.";
+            await sendSingleMessage(chatId, aiReply, null, null);
+
+        } catch (imgErr) {
+            console.error("Image OCR Error:", imgErr.message);
+            await sendSingleMessage(chatId, "⚠️ Failed to process the image. Please send the game name as text.", null, null);
+        }
+        return;
+    }
+
+    // Handle Text Messages
+    if (msg.text) {
+        if (msg.text.startsWith('/start')) {
             const welcomeText = `<b>Welcome to Yono Master Bot!</b>\n\n` +
-                `🤖 I am your AI assistant. You can chat with me or search for any Yono/Rummy Game name to get instant VIP promo codes!`;
+                `🤖 I am your AI assistant. You can chat with me, send game screenshots/logos, or search for any Yono/Rummy Game name to get instant VIP promo codes!`;
             
             try {
                 let newMsgIds = [];
@@ -433,43 +518,18 @@ bot.on('message', async (msg) => {
             }
 
         } else {
-            let foundPost = getLatestPostForQuery(text);
-
-            if (foundPost) {
-                await sendSingleMessage(chatId, foundPost.text, foundPost.photo, foundPost.replyMarkup);
-            } else {
-                try {
-                    await bot.sendChatAction(chatId, 'typing');
-
-                    const completion = await groq.chat.completions.create({
-                        messages: [
-                            { role: "system", content: systemPrompt },
-                            { role: "user", content: text }
-                        ],
-                        model: "llama-3.3-70b-versatile",
-                    });
-
-                    const aiReply = completion.choices[0]?.message?.content || "Please check the correct game name.";
-                    
-                    await sendSingleMessage(chatId, aiReply, null, null);
-
-                } catch (aiErr) {
-                    console.error("Groq AI Error:", aiErr.message);
-                    const fallbackMessage = `❌ <b>Game not found!</b>\n\n💡 <i>This bot only provides Yono and Rummy promo codes. Please type the correct game name.</i>`;
-                    await sendSingleMessage(chatId, fallbackMessage, null, null);
-                }
-            }
+            await handleUserQuery(chatId, msg.text);
         }
     }
 });
 
 const weeklyMessage = `⚡ <b>WEEKLY VIP BONUS ALERT!</b> ⚡\n\n` +
     `🎁 <b>New Promo Codes Are Now Live!</b>\n\n` +
-    `Hey Gamer! Hundreds of fresh & active promo codes have just been updated in <b>Anu MasterBot</b>! Don't let your free bonuses expire! 💰\n\n` +
+    `Hey Gamer! Hundreds of fresh & active promo codes have just been updated in Yono Master Bot! Don't let your free bonuses expire! 💰\n\n` +
     `🔥 <b>WHAT TO DO RIGHT NOW:</b>\n` +
-    `• 🎮 Type & search <b>ANY Yono/Rummy Game Name</b> in this chat right now!\n` +
+    `• 🎮 Type search or send screenshots of <b>ANY Yono/Rummy Game Name</b> in this chat right now!\n` +
     `• 💎 Claim your daily signup & deposit promo codes instantly!\n\n` +
-    `👑 <i>Type your favorite game name below and grab your free code now! 🚀</i>`;
+    `👑 <i>Type your favorite game name or send a screenshot below and grab your free code now! 🚀</i>`;
 
 cron.schedule('0 10 * * 0', () => {
     if (botUsers && botUsers.length > 0) {
@@ -481,4 +541,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Anu MasterBot running successfully!");
+console.log("Yono Master Bot running successfully with Vision OCR!");
