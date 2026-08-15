@@ -8,16 +8,16 @@ import { Groq } from 'groq-sdk';
 const token = process.env.BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 
-// Groq AI Initialization (Llama 3) for Yono Master Bot
+// Groq AI Initialization (Llama 3) for Anu MasterBot
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const systemPrompt = `You are the intelligent, multilingual AI assistant for the Telegram bot Yono Master Bot.
 Your Strict Rules and Instructions:
-1. **Dynamic Language Matching**: Automatically detect the language used by the user (whether it is Bengali, Hindi, English, etc.) and reply fluently in that exact same language.
-2. **Bot Identity**: If anyone asks your name or who you are, state clearly that you are the official AI assistant of **Yono Master Bot.
-3. **STRICT YONO & RUMMY ONLY POLICY (CRITICAL)**: This bot provides VIP promo codes and links ONLY for Yono and Rummy games (around 60-65 apps). **If a user asks for promo codes or mentions any non-Yono/non-Rummy game, other companies' games, or popular games like Free Fire, Free Fire Max, PUBG, Ludo, or anything outside Yono/Rummy**, you MUST strictly and clearly tell them in their language that **this bot only provides Yono and Rummy game promo codes, and no other company's or game's codes (like Free Fire or PUBG) are available here.** State firmly that only Yono/Rummy games are supported.
-4. **Wrong Spelling / Game Not Found**: If a user types an incorrect game name or spelling that does not match our Yono/Rummy list, politely tell them in their language to check the correct game name and spelling.
-5. **CRITICAL RULE FOR CODES**: Never translate or alter promo codes, URLs, domain names, or alphanumeric codes. Promo codes and technical codes must always remain in their original English/standard format.`;
+1. **Strict Language Matching (CRITICAL)**: Reply strictly in the exact same language that the user uses in their message. If the user types in English, you MUST reply in English. If the user types in Bengali, reply in Bengali. Never switch languages unnecessarily.
+2. **Bot Identity**: If anyone asks your name or who you are, state clearly that you are the official AI assistant of Yono Master Bot.
+3. **NEVER ASK FOR USER ID OR PERSONAL DATA (CRITICAL)**: Under no circumstances should you ever ask the user for their user ID, account ID, password, phone number, or any personal information. Users may get scared if you ask for IDs. If a game code is not found or not in the database, simply state that the promo code is currently unavailable or ask them to check the correct game name. Never ask for their ID.
+4. **STRICT YONO & RUMMY ONLY POLICY**: This bot provides VIP promo codes and links ONLY for Yono and Rummy games. If a user asks for Free Fire, PUBG, or any non-Yono game, clearly tell them in their language that only Yono/Rummy codes are available here.
+5. **CRITICAL RULE FOR CODES**: Never translate or alter promo codes, URLs, domain names, or alphanumeric codes. Promo codes must always remain in their original English format.`;
 
 const TARGET_CHANNEL = '@VipYonoFreeCode';
  
@@ -98,7 +98,7 @@ async function sendSingleMessage(chatId, text, photo, replyMarkup) {
 
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Anu MasterBot is running successfully with strict matching!\n');
+    res.end('Anu MasterBot is running successfully!\n');
 });
 
 const PORT = process.env.PORT || 3000;
@@ -332,14 +332,12 @@ bot.on('channel_post', (msg) => {
     }
 });
 
-// Strict Query Matcher: Only returns post if a significant part of the game name matches precisely
 function getLatestPostForQuery(userQuery) {
     if (!postDatabase.all_posts || postDatabase.all_posts.length === 0) {
         return null;
     }
 
     const cleanQuery = userQuery.trim().toLowerCase();
-    // Block common non-game or external game queries from database lookup
     if (cleanQuery.includes('free fire') || cleanQuery.includes('pubg') || cleanQuery.includes('ludo') || cleanQuery.includes('ff max')) {
         return null;
     }
@@ -353,15 +351,14 @@ function getLatestPostForQuery(userQuery) {
         if (!post.text) return;
         let lowerText = post.text.toLowerCase();
         
-        // Extract the game title line (usually the first line of the post)
         let firstLine = lowerText.split('\n')[0].replace(/[^a-z0-9\s]/g, '').trim();
         let queryClean = cleanQuery.replace(/[^a-z0-9\s]/g, '').trim();
 
         let score = 0;
         if (firstLine.includes(queryClean)) {
-            score = 100; // Strong match on game title
+            score = 100;
         } else if (lowerText.includes(queryClean)) {
-            score = 50; // Match inside body
+            score = 50;
         }
 
         if (score > highestScore) {
@@ -436,13 +433,11 @@ bot.on('message', async (msg) => {
             }
 
         } else {
-            // Step 1: Check database using strict game matching
             let foundPost = getLatestPostForQuery(text);
 
             if (foundPost) {
                 await sendSingleMessage(chatId, foundPost.text, foundPost.photo, foundPost.replyMarkup);
             } else {
-                // Step 2: Handle AI conversation (Free Fire, PUBG, wrong spelling -> AI will answer strictly based on rules)
                 try {
                     await bot.sendChatAction(chatId, 'typing');
 
@@ -454,13 +449,13 @@ bot.on('message', async (msg) => {
                         model: "llama-3.3-70b-versatile",
                     });
 
-                    const aiReply = completion.choices[0]?.message?.content || "দয়া করে সঠিক গেমের নাম দেখে লিখুন।";
+                    const aiReply = completion.choices[0]?.message?.content || "Please check the correct game name.";
                     
                     await sendSingleMessage(chatId, aiReply, null, null);
 
                 } catch (aiErr) {
                     console.error("Groq AI Error:", aiErr.message);
-                    const fallbackMessage = `❌ <b>গেমটি পাওয়া যায়নি!</b>\n\n💡 <i>এই বটে শুধুমাত্র Yono এবং Rummy গেমের কোড পাওয়া যায়। দয়া করে সঠিক গেমের নাম দেখে লিখুন।</i>`;
+                    const fallbackMessage = `❌ <b>Game not found!</b>\n\n💡 <i>This bot only provides Yono and Rummy promo codes. Please type the correct game name.</i>`;
                     await sendSingleMessage(chatId, fallbackMessage, null, null);
                 }
             }
@@ -470,7 +465,7 @@ bot.on('message', async (msg) => {
 
 const weeklyMessage = `⚡ <b>WEEKLY VIP BONUS ALERT!</b> ⚡\n\n` +
     `🎁 <b>New Promo Codes Are Now Live!</b>\n\n` +
-    `Hey Gamer! Hundreds of fresh & active promo codes have just been updated in <b>Yono Master Bot</b>! Don't let your free bonuses expire! 💰\n\n` +
+    `Hey Gamer! Hundreds of fresh & active promo codes have just been updated in <b>Anu MasterBot</b>! Don't let your free bonuses expire! 💰\n\n` +
     `🔥 <b>WHAT TO DO RIGHT NOW:</b>\n` +
     `• 🎮 Type & search <b>ANY Yono/Rummy Game Name</b> in this chat right now!\n` +
     `• 💎 Claim your daily signup & deposit promo codes instantly!\n\n` +
@@ -486,4 +481,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Anu MasterBot running successfully with strict query filter!");
+console.log("Anu MasterBot running successfully!");
