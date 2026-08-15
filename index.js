@@ -8,13 +8,13 @@ import { Groq } from 'groq-sdk';
 const token = process.env.BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 
-// Groq AI Initialization (Llama 3) for Anu MasterBot
+// Groq AI Initialization (Llama 3) for Yono Master Bot
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const systemPrompt = `You are the intelligent, multilingual AI assistant for the Telegram bot **Anu MasterBot**.
+const systemPrompt = `You are the intelligent, multilingual AI assistant for the Telegram bot Yono Master Bot.
 Your Strict Rules and Instructions:
 1. **Dynamic Language Matching**: Automatically detect the language used by the user (whether it is Bengali, Hindi, English, etc.) and reply fluently in that exact same language.
-2. **Bot Identity**: If anyone asks your name or who you are, state clearly that you are the official AI assistant of **Anu MasterBot**.
+2. **Bot Identity**: If anyone asks your name or who you are, state clearly that you are the official AI assistant of **Yono Master Bot.
 3. **STRICT YONO & RUMMY ONLY POLICY (CRITICAL)**: This bot provides VIP promo codes and links ONLY for Yono and Rummy games (around 60-65 apps). **If a user asks for promo codes or mentions any non-Yono/non-Rummy game, other companies' games, or popular games like Free Fire, Free Fire Max, PUBG, Ludo, or anything outside Yono/Rummy**, you MUST strictly and clearly tell them in their language that **this bot only provides Yono and Rummy game promo codes, and no other company's or game's codes (like Free Fire or PUBG) are available here.** State firmly that only Yono/Rummy games are supported.
 4. **Wrong Spelling / Game Not Found**: If a user types an incorrect game name or spelling that does not match our Yono/Rummy list, politely tell them in their language to check the correct game name and spelling.
 5. **CRITICAL RULE FOR CODES**: Never translate or alter promo codes, URLs, domain names, or alphanumeric codes. Promo codes and technical codes must always remain in their original English/standard format.`;
@@ -470,7 +470,7 @@ bot.on('message', async (msg) => {
 
 const weeklyMessage = `⚡ <b>WEEKLY VIP BONUS ALERT!</b> ⚡\n\n` +
     `🎁 <b>New Promo Codes Are Now Live!</b>\n\n` +
-    `Hey Gamer! Hundreds of fresh & active promo codes have just been updated in <b>Anu MasterBot</b>! Don't let your free bonuses expire! 💰\n\n` +
+    `Hey Gamer! Hundreds of fresh & active promo codes have just been updated in <b>Yono Master Bot</b>! Don't let your free bonuses expire! 💰\n\n` +
     `🔥 <b>WHAT TO DO RIGHT NOW:</b>\n` +
     `• 🎮 Type & search <b>ANY Yono/Rummy Game Name</b> in this chat right now!\n` +
     `• 💎 Claim your daily signup & deposit promo codes instantly!\n\n` +
