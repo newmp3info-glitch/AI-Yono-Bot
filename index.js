@@ -398,7 +398,7 @@ bot.on('message', async (msg) => {
 
     if (text) {
         if (text.startsWith('/start')) {
-            const welcomeText = `<b>Welcome to Anu MasterBot!</b>\n\n` +
+            const welcomeText = `<b>Welcome to Yono Master Bot!</b>\n\n` +
                 `🤖 I am your AI assistant. You can chat with me or search for any Yono/Rummy Game name to get instant VIP promo codes!`;
             
             try {
