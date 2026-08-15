@@ -2,6 +2,7 @@ import TelegramBotPkg from 'node-telegram-bot-api';
 const TelegramBot = TelegramBotPkg.default || TelegramBotPkg;
 import http from 'http';
 import fs from 'fs';
+import path from 'path';
 import cron from 'node-cron';
 import { Groq } from 'groq-sdk';
 
@@ -420,12 +421,40 @@ bot.on('message', async (msg) => {
         }
     }
 
-    // Handle Image / Screenshot OCR Recognition
+    // Handle Image / Screenshot OCR Recognition with Local File Processing
     if (msg.photo && msg.photo.length > 0) {
+        let filePath = null;
         try {
             await bot.sendChatAction(chatId, 'typing');
             const fileId = msg.photo[msg.photo.length - 1].file_id;
-            const fileLink = await bot.getFileLink(fileId);
+            
+            // Download photo locally to prevent URL fetching errors
+            const fileObj = await bot.getFile(fileId);
+            const fileUrl = `https://api.telegram.org/file/bot${token}/${fileObj.file_path}`;
+            
+            filePath = path.join('./', `temp_${Date.now()}.jpg`);
+            
+            await new Promise((resolve, reject) => {
+                const fileStream = fs.createWriteStream(filePath);
+                http.get(fileUrl, (response) => {
+                    response.pipe(fileStream);
+                    fileStream.on('finish', () => {
+                        fileStream.close();
+                        resolve();
+                    });
+                }).on('error', (err) => {
+                    fs.unlink(filePath, () => {});
+                    reject(err);
+                });
+            });
+
+            // Convert image to Base64 for Groq Vision Model
+            const imageBuffer = fs.readFileSync(filePath);
+            const base64Image = imageBuffer.toString('base64');
+            const dataUrl = `data:image/jpeg;base64,${base64Image}`;
+
+            // Clean up temp file
+            fs.unlink(filePath, () => {});
 
             const visionCompletion = await groq.chat.completions.create({
                 model: "llama-3.2-11b-vision-preview",
@@ -440,7 +469,7 @@ bot.on('message', async (msg) => {
                             {
                                 type: "image_url",
                                 image_url: {
-                                    url: fileLink
+                                    url: dataUrl
                                 }
                             }
                         ]
@@ -471,8 +500,19 @@ bot.on('message', async (msg) => {
             await sendSingleMessage(chatId, aiReply, null, null);
 
         } catch (imgErr) {
+            if (filePath && fs.existsSync(filePath)) {
+                fs.unlink(filePath, () => {});
+            }
             console.error("Image OCR Error:", imgErr.message);
-            await sendSingleMessage(chatId, "⚠️ Failed to process the image. Please send the game name as text.", null, null);
+            const completion = await groq.chat.completions.create({
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: "The user sent an image, but an error occurred while processing it. Reply politely in the user's language asking them to send the game name as text." }
+                ],
+                model: "llama-3.3-70b-versatile",
+            });
+            let aiReply = completion.choices[0]?.message?.content || "Please send the game name as text.";
+            await sendSingleMessage(chatId, aiReply, null, null);
         }
         return;
     }
