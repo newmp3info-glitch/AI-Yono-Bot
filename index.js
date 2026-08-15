@@ -1,6 +1,7 @@
 import TelegramBotPkg from 'node-telegram-bot-api';
 const TelegramBot = TelegramBotPkg.default || TelegramBotPkg;
 import http from 'http';
+import https from 'https';
 import fs from 'fs';
 import path from 'path';
 import cron from 'node-cron';
@@ -421,14 +422,13 @@ bot.on('message', async (msg) => {
         }
     }
 
-    // Handle Image / Screenshot OCR Recognition with Local File Processing
+    // Handle Image / Screenshot OCR Recognition with HTTPS File Downloading
     if (msg.photo && msg.photo.length > 0) {
         let filePath = null;
         try {
             await bot.sendChatAction(chatId, 'typing');
             const fileId = msg.photo[msg.photo.length - 1].file_id;
             
-            // Download photo locally to prevent URL fetching errors
             const fileObj = await bot.getFile(fileId);
             const fileUrl = `https://api.telegram.org/file/bot${token}/${fileObj.file_path}`;
             
@@ -436,7 +436,7 @@ bot.on('message', async (msg) => {
             
             await new Promise((resolve, reject) => {
                 const fileStream = fs.createWriteStream(filePath);
-                http.get(fileUrl, (response) => {
+                https.get(fileUrl, (response) => {
                     response.pipe(fileStream);
                     fileStream.on('finish', () => {
                         fileStream.close();
@@ -448,12 +448,10 @@ bot.on('message', async (msg) => {
                 });
             });
 
-            // Convert image to Base64 for Groq Vision Model
             const imageBuffer = fs.readFileSync(filePath);
             const base64Image = imageBuffer.toString('base64');
             const dataUrl = `data:image/jpeg;base64,${base64Image}`;
 
-            // Clean up temp file
             fs.unlink(filePath, () => {});
 
             const visionCompletion = await groq.chat.completions.create({
@@ -520,7 +518,7 @@ bot.on('message', async (msg) => {
     // Handle Text Messages
     if (msg.text) {
         if (msg.text.startsWith('/start')) {
-            const welcomeText = `<b>Welcome to Yono Master Bot!</b>\n\n` +
+            const welcomeText = `Welcome to Yono Master Bot!\n\n` +
                 `🤖 I am your AI assistant. You can chat with me, send game screenshots/logos, or search for any Yono/Rummy Game name to get instant VIP promo codes!`;
             
             try {
