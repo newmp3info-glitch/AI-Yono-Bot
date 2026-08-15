@@ -1,8 +1,8 @@
 import TelegramBotPkg from 'node-telegram-bot-api';
 const TelegramBot = TelegramBotPkg.default || TelegramBotPkg;
 import http from 'http';
+import https from 'https';
 import fs from 'fs';
-import path from 'path';
 import cron from 'node-cron';
 import { Groq } from 'groq-sdk';
 
@@ -421,15 +421,31 @@ bot.on('message', async (msg) => {
         }
     }
 
-    // Handle Image / Screenshot OCR Recognition via Direct Telegram File URL
+    // Handle Image / Screenshot OCR Recognition via Robust In-Memory Buffer to Base64
     if (msg.photo && msg.photo.length > 0) {
         const userLangCode = msg.from?.language_code || 'en';
         try {
             await bot.sendChatAction(chatId, 'typing');
             const fileId = msg.photo[msg.photo.length - 1].file_id;
             
-            // Fetch direct file URL securely from Telegram API wrapper
             const fileUrl = await bot.getFileLink(fileId);
+            
+            // Download image into memory buffer to guarantee compatibility with Groq Vision
+            const imageBuffer = await new Promise((resolve, reject) => {
+                https.get(fileUrl, (res) => {
+                    if (res.statusCode !== 200) {
+                        reject(new Error(`Failed to download image, status code: ${res.statusCode}`));
+                        return;
+                    }
+                    const chunks = [];
+                    res.on('data', (chunk) => chunks.push(chunk));
+                    res.on('end', () => resolve(Buffer.concat(chunks)));
+                    res.on('error', reject);
+                }).on('error', reject);
+            });
+
+            const base64Image = imageBuffer.toString('base64');
+            const dataUrl = `data:image/jpeg;base64,${base64Image}`;
 
             const visionCompletion = await groq.chat.completions.create({
                 model: "llama-3.2-11b-vision-preview",
@@ -444,7 +460,7 @@ bot.on('message', async (msg) => {
                             {
                                 type: "image_url",
                                 image_url: {
-                                    url: fileUrl
+                                    url: dataUrl
                                 }
                             }
                         ]
@@ -553,4 +569,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Bot running successfully with Direct Vision OCR & Multilingual support!");
+console.log("Yono Master Bot running successfully with Buffer Vision OCR & Multilingual support!");
