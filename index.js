@@ -11,13 +11,18 @@ const bot = new TelegramBot(token, { polling: true });
 // Groq AI Initialization for Yono Master Bot
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const systemPrompt = `You are the intelligent, multilingual AI assistant for the Telegram bot Yono Master Bot.
+const systemPrompt = `You are the friendly, intelligent, and official AI assistant (Head AI) of Yono Master Bot. 
+Your primary purpose is to help users get VIP promo codes and download links for Yono and Rummy games.
+
 Your Strict Rules and Instructions:
-1. **Strict Language Matching (CRITICAL)**: Reply strictly in the exact same language that the user uses in their message or based on their provided language context. If the user types or communicates in English, you MUST reply in English. If the user types in Bengali, reply in Bengali. Never switch languages unnecessarily.
-2. **Bot Identity**: If anyone asks your name or who you are, state clearly that you are the official AI assistant of Yono Master Bot.
-3. **NEVER ASK FOR USER ID OR PERSONAL DATA (CRITICAL)**: Under no circumstances should you ever ask the user for their user ID, account ID, password, phone number, or any personal information. Users may get scared if you ask for IDs. If a game code is not found or not in the database, simply state that the promo code is currently unavailable or ask them to check the correct game name. Never ask for their ID.
-4. **STRICT YONO & RUMMY ONLY POLICY**: This bot provides VIP promo codes and links ONLY for Yono and Rummy games. If a user asks for Free Fire, PUBG, or any non-Yono game, clearly tell them in their language that only Yono/Rummy codes are available here.
-5. **CRITICAL RULE FOR CODES**: Never translate or alter promo codes, URLs, domain names, or alphanumeric codes. Promo codes must always remain in their original English format.`;
+1. **Strict Language Matching (CRITICAL)**: Reply strictly in the exact same language that the user uses in their message (Bengali or English). If the user types in Bengali, you MUST reply in natural, polite, and fluent Bengali. If they type in English, reply in English.
+2. **Bot Identity**: You are the smart Head AI assistant of Yono Master Bot, managing all Yono and Rummy game promo codes. Be welcoming and helpful.
+3. **NEVER ASK FOR USER ID OR PERSONAL DATA (CRITICAL)**: Under no circumstances should you ever ask the user for their user ID, account ID, password, phone number, or any personal information. 
+4. **NO BORING OR ROBOTIC REPLIES (CRITICAL)**: Never mention "welcome bonus", "referral code", or generic robotic text. If a game name is unclear, misspelled, or not found, reply warmly:
+   - In Bengali: "আমি আপনার কথা বুঝতে পেরেছি! আপনি ঠিক কোন Yono বা Rummy গেমটির প্রমো কোড চাচ্ছেন, দয়া করে গেমটির সঠিক নামটি আমাকে লিখে পাঠান। আমি আপনাকে সঙ্গে সঙ্গে ভিআইপি প্রমো কোড এবং গেম লিংক দিয়ে দিচ্ছি! 🚀"
+   - In English: "I'm here to help! Please type the exact name of the Yono or Rummy game you are looking for, and I will instantly provide you with the VIP promo code and download link! 🚀"
+5. **STRICT YONO & RUMMY ONLY POLICY**: This bot provides VIP promo codes and links ONLY for Yono and Rummy games. If a user asks for Free Fire, PUBG, or non-Yono games, politely guide them that only Yono/Rummy codes are available here.
+6. **CRITICAL RULE FOR CODES**: Never translate or alter promo codes, URLs, domain names, or alphanumeric codes. Promo codes must always remain in their original English format.`;
 
 const TARGET_CHANNEL = '@VipYonoFreeCode';
  
@@ -334,7 +339,7 @@ bot.on('channel_post', (msg) => {
     }
 });
 
-// Strict Game Name Search Filter (Prevents random chat/sentences from triggering game posts)
+// Strict Game Name Search Filter
 function getLatestPostForQuery(userQuery) {
     if (!postDatabase.all_posts || postDatabase.all_posts.length === 0) {
         return null;
@@ -345,7 +350,6 @@ function getLatestPostForQuery(userQuery) {
         return null;
     }
 
-    // If query is a sentence (more than 3 words), it is regular chat, NOT a game search!
     const words = cleanQuery.split(/\s+/);
     if (words.length > 3) {
         return null;
@@ -396,12 +400,12 @@ async function handleUserQuery(chatId, queryText) {
                 model: "llama-3.3-70b-versatile",
             });
 
-            const aiReply = completion.choices[0]?.message?.content || "Please check the correct game name.";
+            const aiReply = completion.choices[0]?.message?.content || "Please type the correct game name.";
             await sendSingleMessage(chatId, aiReply, null, null);
 
         } catch (aiErr) {
             console.error("Groq AI Error:", aiErr.message);
-            const fallbackMessage = `❌ <b>Game not found!</b>\n\n💡 <i>This bot only provides Yono and Rummy promo codes. Please type the correct game name.</i>`;
+            const fallbackMessage = `❌ <b>গেমটি পাওয়া যায়নি!</b>\n\n💡 <i>দয়া করে সঠিক Yono বা Rummy গেমের নামটি লিখে পাঠান, আমি আপনাকে সঙ্গে সঙ্গে প্রমো কোড দিয়ে দিচ্ছি!</i>`;
             await sendSingleMessage(chatId, fallbackMessage, null, null);
         }
     }
@@ -429,94 +433,11 @@ bot.on('message', async (msg) => {
         }
     }
 
-    // Handle Image / Screenshot OCR Recognition via Buffer to Base64
-    if (msg.photo && msg.photo.length > 0) {
-        const userLangCode = msg.from?.language_code || 'en';
-        try {
-            await bot.sendChatAction(chatId, 'typing');
-            const fileId = msg.photo[msg.photo.length - 1].file_id;
-            
-            const fileUrl = await bot.getFileLink(fileId);
-            
-            const imageBuffer = await new Promise((resolve, reject) => {
-                https.get(fileUrl, (res) => {
-                    if (res.statusCode !== 200) {
-                        reject(new Error(`Failed to download image, status code: ${res.statusCode}`));
-                        return;
-                    }
-                    const chunks = [];
-                    res.on('data', (chunk) => chunks.push(chunk));
-                    res.on('end', () => resolve(Buffer.concat(chunks)));
-                    res.on('error', reject);
-                }).on('error', reject);
-            });
-
-            const base64Image = imageBuffer.toString('base64');
-            const dataUrl = `data:image/jpeg;base64,${base64Image}`;
-
-            const visionCompletion = await groq.chat.completions.create({
-                model: "llama-3.2-11b-vision-preview",
-                messages: [
-                    {
-                        role: "user",
-                        content: [
-                            {
-                                type: "text",
-                                text: "Extract the exact game name or app title visible in this image (e.g., Yono Rummy, Teen Patti, etc.). Reply with ONLY the game name, nothing else. If no game name is visible, reply with 'UNKNOWN'."
-                            },
-                            {
-                                type: "image_url",
-                                image_url: {
-                                    url: dataUrl
-                                }
-                            }
-                        ]
-                    }
-                ],
-                max_tokens: 30
-            });
-
-            let detectedGameName = visionCompletion.choices[0]?.message?.content?.trim() || "";
-            console.log(`Detected game from screenshot: ${detectedGameName}`);
-
-            if (detectedGameName && detectedGameName !== "UNKNOWN" && detectedGameName.length > 1) {
-                let foundPost = getLatestPostForQuery(detectedGameName);
-                if (foundPost) {
-                    await sendSingleMessage(chatId, foundPost.text, foundPost.photo, foundPost.replyMarkup);
-                    return;
-                }
-            }
-
-            const completion = await groq.chat.completions.create({
-                model: "llama-3.3-70b-versatile",
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: `The user sent an image (User Language Code: ${userLangCode}), but no matching game code was found in database for detected name "${detectedGameName}". Reply politely in the user's language (${userLangCode}) stating that this bot only provides Yono and Rummy promo codes and ask them to send the correct game name or screenshot.` }
-                ]
-            });
-            let aiReply = completion.choices[0]?.message?.content || "Please send a valid Yono or Rummy game name or screenshot.";
-            await sendSingleMessage(chatId, aiReply, null, null);
-
-        } catch (imgErr) {
-            console.error("Image OCR Error:", imgErr.message);
-            const completion = await groq.chat.completions.create({
-                model: "llama-3.3-70b-versatile",
-                messages: [
-                    { role: "system", content: systemPrompt },
-                    { role: "user", content: `The user sent an image (User Language Code: ${userLangCode}), but an error occurred while processing it. Reply politely in the user's language (${userLangCode}) asking them to send the game name as text.` }
-                ]
-            });
-            let aiReply = completion.choices[0]?.message?.content || "Please send the game name as text.";
-            await sendSingleMessage(chatId, aiReply, null, null);
-        }
-        return;
-    }
-
     // Handle Text Messages
     if (msg.text) {
         if (msg.text.startsWith('/start')) {
-            const welcomeText = `Welcome to Yono Master Bot!\n\n` +
-                `🤖 I am your AI assistant. You can chat with me, send game screenshots/logos, or search for any Yono/Rummy Game name to get instant VIP promo codes!`;
+            const welcomeText = `<b>স্বাগতম Yono Master Bot-এ! 🚀</b>\n\n` +
+                `🤖 আমি এই বটের হেড এআই অ্যাসিস্ট্যান্ট। আপনি যে কোনো <b>Yono বা Rummy গেমের নাম</b> লিখে পাঠান, আমি আপনাকে সঙ্গে সঙ্গে ভিআইপি প্রমো কোড ও ডাউনলোড লিংক দিয়ে দেব!`;
             
             try {
                 let newMsgIds = [];
@@ -562,9 +483,9 @@ const weeklyMessage = `⚡ <b>WEEKLY VIP BONUS ALERT!</b> ⚡\n\n` +
     `🎁 <b>New Promo Codes Are Now Live!</b>\n\n` +
     `Hey Gamer! Hundreds of fresh & active promo codes have just been updated in Yono Master Bot! Don't let your free bonuses expire! 💰\n\n` +
     `🔥 <b>WHAT TO DO RIGHT NOW:</b>\n` +
-    `• 🎮 Type search or send screenshots of <b>ANY Yono/Rummy Game Name</b> in this chat right now!\n` +
-    `• 💎 Claim your daily signup & deposit promo codes instantly!\n\n` +
-    `👑 <i>Type your favorite game name or send a screenshot below and grab your free code now! 🚀</i>`;
+    `• 🎮 Type search of <b>ANY Yono/Rummy Game Name</b> in this chat right now!\n` +
+    `• 💎 Claim your daily VIP promo codes instantly!\n\n` +
+    `👑 <i>Type your favorite game name below and grab your free code now! 🚀</i>`;
 
 cron.schedule('0 10 * * 0', () => {
     if (botUsers && botUsers.length > 0) {
@@ -576,4 +497,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Bot running successfully with Strict Search Filter & Channel Auto-Save!");
+console.log("Yono Master Bot running successfully with Head AI Natural Prompting!");
