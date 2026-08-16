@@ -8,7 +8,7 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "gtts": "latest",
+    "google-tts-api": "^1.1.2",
     "groq-sdk": "^0.7.0",
     "langdetect": "^0.2.1",
     "node-cron": "^3.0.3",
