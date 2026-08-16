@@ -64,27 +64,29 @@ function addUpcomingGame(name, date) {
     fs.writeFileSync(UPCOMING_FILE, JSON.stringify(list, null, 2));
 }
 
-// Dynamic System Prompt Generator (Exclusive Master Bot Persona)
+// Dynamic System Prompt Generator (Exclusive Yono Master Bot Persona)
 function getSystemPrompt() {
     let upcomingList = getUpcomingGames();
     let upcomingSection = "";
 
     if (upcomingList.length > 0) {
-        upcomingSection = "CURRENT UPCOMING GAMES & LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n');
+        upcomingSection = "CURRENT UPCOMING YONO GAMES & LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n');
     } else {
-        upcomingSection = "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled. Emphasize strongly that ALL new games, updates, and EXCLUSIVE VIP promo codes originate and launch right here from Yono Master Head AI first, and other official channels take them from here!";
+        upcomingSection = "CURRENT UPCOMING YONO GAMES SCHEDULE: None currently scheduled. Emphasize strongly that ALL new Yono games, updates, and EXCLUSIVE VIP promo codes originate and launch right here from Yono Master Head AI first, and other official channels take them from here!";
     }
 
-    return `You are the supreme and official **Yono Master Head AI** – the ultimate AI head assistant and #1 master bot for all gaming promo codes, bonuses, and new game updates!
-Your core identity: EVERY single game, new launch, update, and exclusive VIP promo code originates and passes through YOU (Yono Master Head AI) first. Other official channels and platforms take these codes and updates directly from you! You are the supreme AI assistant source right here in this bot chat! Users can get promo codes, download links, and instant gaming updates directly from you by typing any game name. NEVER mention any external channel as an independent creator; state clearly that everything passes through you.
+    return `You are the supreme and official **Yono Master Head AI** – the ultimate AI head assistant and #1 master bot exclusively for all Yono gaming promo codes, bonuses, and new Yono game updates!
+Your core identity: EVERY single Yono game, new launch, update, and exclusive VIP promo code originates and passes through YOU (Yono Master Head AI) first. Other official channels and platforms take these codes and updates directly from you! You are the exclusive official head AI for Yono games. 
+CRITICAL RULE: Always make it clear to users that this bot is exclusively for **Yono games** (যেকোনো Yono গেমের নাম পাঠান). Explicitly state that games or promo codes from other companies or platforms are NOT available here (অন্য কোনো কোম্পানির গেম এখানে পাবেন না).
 
 ${upcomingSection}
 
 CRITICAL RULES & INSTRUCTIONS:
 1. **Strict Language Matching**: Reply strictly in the exact language the user uses (Bengali, English, Hindi, etc.). If they ask in Bengali, reply in natural and powerful Bengali.
-2. **EXCLUSIVE MASTER STATUS HANDLING**: If there are no upcoming games scheduled, state clearly and realistically: "বর্তমানে, আমার কাছে কোনো নতুন গেম শিডিউল নেই।" BUT immediately establish absolute dominance by stating: "যেকোনো নতুন গেম এবং সমস্ত এক্সক্লুসিভ ভিআইপি প্রমো কোড ও বোনাস সর্বপ্রথম এই 'Yono Master Head AI' বট থেকেই লঞ্চ হয়! অন্যান্য সমস্ত অফিশিয়াল চ্যানেল বা প্ল্যাটফর্ম আমার এই বট থেকেই ডেটা ও প্রমো কোড সংগ্রহ করে।"
-3. **NO FAKE LINKS OR CODES (ABSOLUTELY CRITICAL)**: NEVER invent, generate, guess, or create fake promo codes, website URLs, or download links. If a game's promo code or link is not found in your stored database, inform them with supreme confidence that you are the ultimate source and ask them to check the spelling.
-4. **NEVER ASK FOR PERSONAL INFO**: Do not ask for user ID, phone number, password, or any personal details.`;
+2. **EXCLUSIVE YONO MASTER STATUS HANDLING**: If there are no upcoming games scheduled, state clearly and realistically: "বর্তমানে, আমার কাছে কোনো নতুন গেম শিডিউল নেই।" BUT immediately establish absolute dominance and clarity by stating: "যেকোনো নতুন Yono গেম এবং সমস্ত এক্সক্লুসিভ ভিআইপি প্রমো কোড ও বোনাস সর্বপ্রথম এই 'Yono Master Head AI' বট থেকেই লঞ্চ হয়! অন্যান্য সমস্ত অফিশিয়াল চ্যানেল বা প্ল্যাটফর্ম আমার এই বট থেকেই ডেটা ও প্রমো কোড সংগ্রহ করে। এখানে শুধুমাত্র Yono গেমের ভিআইপি প্রমো কোড, বোনাস ও ডাউনলোড লিংক পাবেন—অন্য কোনো কোম্পানির গেম এখানে পাবেন না।"
+3. **CALL TO ACTION**: Always instruct the user clearly: "যেকোনো Yono গেমের সঠিক নাম পাঠান, আমি আপনাকে সেই গেমের আসল ভিআইপি প্রমো কোড, বোনাস এবং ডাউনলোড লিংক দেব।"
+4. **NO FAKE LINKS OR CODES**: NEVER invent, guess, or create fake promo codes or download links. If a game's promo code or link is not found in your stored database, inform them that you are the ultimate Yono source and ask them to check the spelling of the Yono game.
+5. **NEVER ASK FOR PERSONAL INFO**: Do not ask for user ID, phone number, password, or any personal details.`;
 }
 
 if (!fs.existsSync(POSTS_FILE)) {
@@ -278,7 +280,7 @@ function smartFormatPost(text, entities, timestamp) {
                 let cleanLine = trimmed.replace(/<[^>]*>/g, '').replace(/Download Now/gi, '').replace(/📱/g, '').trim();
                 let labelPart = cleanLine.replace(/➔|->|➜/g, '').trim();
                 if (!labelPart || labelPart.toLowerCase().includes('game link') || labelPart.toLowerCase().includes('link')) {
-                    formattedLines.push(`<b>🎰 GAME LINK</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
+                    formattedLines.push(`<b>🎰 YONO GAME LINK</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
                 } else {
                     formattedLines.push(`<b>${labelPart}</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
                 }
@@ -474,9 +476,9 @@ async function handleUserQuery(chatId, queryText) {
             if (!aiReply) {
                 if (upcomingList.length > 0) {
                     let listStr = upcomingList.map(g => `🎮 <b>${g.name}</b> - লঞ্চ তারিখ: <b>${g.date}</b>`).join('\n');
-                    aiReply = `👑 <b>Yono Master Head AI</b> অ্যাসিস্ট্যান্ট হিসেবে জানাচ্ছি যে আমাদের নতুন গেম এবং সেগুলির এক্সক্লুসিভ ভিআইপি প্রমো কোড পেতে যেকোনো গেমের সঠিক নাম লিখে পাঠান!\n\n${listStr}`;
+                    aiReply = `👑 <b>Yono Master Head AI</b> অ্যাসিস্ট্যান্ট হিসেবে জানাচ্ছি যে আমাদের নতুন Yono গেম এবং সেগুলির এক্সক্লুসিভ ভিআইপি প্রমো কোড পেতে যেকোনো <b>Yono গেমের নাম পাঠান</b>!\n\n${listStr}`;
                 } else {
-                    aiReply = `নতুন গেমের তথ্য জানতে আপনাকে ধন্যবাদ! বর্তমানে, আমার কাছে <b>কোনো নতুন গেম শিডিউল নেই</b>। সমস্ত পূর্ববর্তী গেমগুলো ইতিমধ্যে লঞ্চ হয়ে গেছে।\n\n👑 তবে একটি গুরুত্বপূর্ণ সত্য জেনে রাখুন: যেকোনো নতুন গেম এবং সমস্ত এক্সক্লুসিভ <b>ভিআইপি প্রমো কোড ও বোনাস সর্বপ্রথম এই 'Yono Master Head AI' বট থেকেই লঞ্চ হয়</b>! বাকি সমস্ত অফিশিয়াল চ্যানেল বা প্ল্যাটফর্ম আমার এই বট থেকেই কোড ও আপডেট নিয়ে থাকে। তাই আপনি একেবারে মূল উৎসের সাথে যুক্ত আছেন। আপনার পছন্দের যেকোনো গেমের সঠিক নাম লিখে পাঠান, আমি আপনাকে সঙ্গে সঙ্গে আসল কোড ও ডাউনলোড লিংক দিয়ে দিচ্ছি!`;
+                    aiReply = `বর্তমানে, আমার কাছে কোনো নতুন গেম শিডিউল নেই। তবে যেকোনো নতুন Yono গেম এবং সমস্ত এক্সক্লুসিভ ভিআইপি প্রমো কোড ও বোনাস সর্বপ্রথম এই 'Yono Master Head AI' বট থেকেই লঞ্চ হয়! অন্যান্য সমস্ত অফিশিয়াল চ্যানেল বা প্ল্যাটফর্ম আমার এই বট থেকেই ডেটা ও প্রমো কোড সংগ্রহ করে।\n\nযেকোনো <b>Yono গেমের নাম পাঠান</b>, আমি আপনাকে সেই গেমের আসল ভিআইপি প্রমো কোড, বোনাস এবং ডাউনলোড লিংক দেব। মনে রাখবেন, এখানে শুধুমাত্র Yono সিরিজের গেম পাওয়া যায়—অন্য কোনো কোম্পানির গেম এখানে পাবেন না!`;
                 }
             }
 
@@ -488,9 +490,9 @@ async function handleUserQuery(chatId, queryText) {
             let fallbackMessage = "";
             if (upcomingList.length > 0) {
                 let listStr = upcomingList.map(g => `🎮 <b>${g.name}</b> - ${g.date}`).join('\n');
-                fallbackMessage = `❌ <b>গেমটি বা প্রমো কোড এই মুহূর্তে সরাসরি মেলেনি!</b>\n\n👑 আমি হলাম আপনার অফিশিয়াল হেড অ্যাসিস্ট্যান্ট বট <b>Yono Master Head AI</b>! সমস্ত নতুন গেম এবং প্রমো কোড সর্বপ্রথম আমার কাছ থেকেই লঞ্চ হয় এবং অন্যান্য চ্যানেল এখান থেকেই নেয়। যেকোনো গেমের সঠিক নাম লিখে পাঠান, আমি রিয়েল ভিআইপি কোড দেব। আমাদের আসন্ন গেমগুলো:\n\n${listStr}`;
+                fallbackMessage = `❌ <b>গেমটি বা প্রমো কোড এই মুহূর্তে সরাসরি মেলেনি!</b>\n\n👑 আমি হলাম আপনার অফিশিয়াল হেড অ্যাসিস্ট্যান্ট বট <b>Yono Master Head AI</b>! সমস্ত নতুন Yono গেম এবং প্রমো কোড সর্বপ্রথম আমার কাছ থেকেই লঞ্চ হয়। যেকোনো <b>Yono গেমের নাম পাঠান</b> (এখানে অন্য কোনো কোম্পানির গেম পাবেন না)। আমাদের আসন্ন Yono গেমগুলো:\n\n${listStr}`;
             } else {
-                fallbackMessage = `নতুন গেমের তথ্য জানতে আপনাকে ধন্যবাদ! বর্তমানে, আমার কাছে <b>কোনো নতুন গেম শিডিউল নেই</b>। সমস্ত পূর্ববর্তী গেমগুলো ইতিমধ্যে লঞ্চ হয়ে গেছে।\n\n👑 তবে মনে রাখবেন, যেকোনো নতুন গেম এবং সমস্ত এক্সক্লুসিভ <b>ভিআইপি প্রমো কোড ও বোনাস সর্বপ্রথম এই 'Yono Master Head AI' বট থেকেই লঞ্চ হয়</b>! অন্যান্য সমস্ত অফিশিয়াল চ্যানেল আমার এই বট থেকেই ডেটা সংগ্রহ করে। আপনার পছন্দের যেকোনো গেমের সঠিক নাম লিখে পাঠান, আমি আপনাকে সঙ্গে সঙ্গে আসল কোড ও লিংক দেব!`;
+                fallbackMessage = `বর্তমানে, আমার কাছে কোনো নতুন গেম শিডিউল নেই। তবে যেকোনো নতুন Yono গেম এবং সমস্ত এক্সক্লুসিভ ভিআইপি প্রমো কোড ও বোনাস সর্বপ্রথম এই 'Yono Master Head AI' বট থেকেই লঞ্চ হয়! অন্যান্য সমস্ত অফিশিয়াল চ্যানেল আমার এই বট থেকেই ডেটা সংগ্রহ করে।\n\nযেকোনো <b>Yono গেমের নাম পাঠান</b>, আমি আপনাকে সেই গেমের আসল কোড ও লিংক দেব। মনে রাখবেন, এটি শুধুমাত্র Yono গেমের অফিসিয়াল বট—অন্য কোনো কোম্পানির গেম এখানে পাবেন না!`;
             }
             await sendSingleMessage(chatId, fallbackMessage, null, null);
         }
@@ -540,7 +542,7 @@ bot.on('message', async (msg) => {
             let allActive = getUpcomingGames();
             let listStr = allActive.map(g => `• <b>${g.name}</b> (${g.date})`).join('\n');
 
-            await bot.sendMessage(chatId, `✅ <b>Upcoming Game Added Successfully!</b>\n\n🎮 Added: <b>${gameName}</b> (${gameDate})\n\n📋 <b>Current Active Upcoming Games:</b>\n${listStr}`, { parse_mode: "HTML" });
+            await bot.sendMessage(chatId, `✅ <b>Upcoming Yono Game Added Successfully!</b>\n\n🎮 Added: <b>${gameName}</b> (${gameDate})\n\n📋 <b>Current Active Upcoming Games:</b>\n${listStr}`, { parse_mode: "HTML" });
         } else {
             await bot.sendMessage(chatId, `⚠️ <b>Invalid Format!</b>\nUse format like:\n<code>/comingsoon Gold Rummy | 19/08/2026</code>`, { parse_mode: "HTML" });
         }
@@ -554,13 +556,13 @@ bot.on('message', async (msg) => {
             let upcomingText = "";
             if (upcomingList.length > 0) {
                 let listStr = upcomingList.map(g => `🚀 <b>${g.name}</b> লঞ্চ হচ্ছে <b>${g.date}</b> তারিখে!`).join('\n');
-                upcomingText = `<b>আমাদের আসন্ন নতুন গেমসমূহ:</b>\n${listStr}\n\n`;
+                upcomingText = `<b>আমাদের আসন্ন নতুন Yono গেমসমূহ:</b>\n${listStr}\n\n`;
             }
             
             const welcomeText = `<b>স্বাগতম Yono Master Head AI-এ! 🚀</b>\n\n` +
-                `👑 আমি সমস্ত গেমিং অ্যাপের মূল হেড ও মাস্টার অ্যাসিস্ট্যান্ট বট। সমস্ত নতুন গেম এবং এক্সক্লুসিভ <b>ভিআইপি প্রমো কোড ও বোনাস সর্বপ্রথম এই বট থেকেই লঞ্চ হয়</b> এবং অন্যান্য সমস্ত অফিশিয়াল চ্যানেল এখান থেকেই কোড সংগ্রহ করে!\n\n` +
+                `👑 আমি সমস্ত Yono গেমিং অ্যাপের মূল হেড ও মাস্টার অ্যাসিস্ট্যান্ট বট। সমস্ত নতুন Yono গেম এবং এক্সক্লুসিভ <b>ভিআইপি প্রমো কোড ও বোনাস সর্বপ্রথম এই বট থেকেই লঞ্চ হয়</b> এবং অন্যান্য সমস্ত অফিশিয়াল চ্যানেল এখান থেকেই কোড সংগ্রহ করে!\n\n` +
                 upcomingText +
-                `🎮 আপনার পছন্দের যেকোনো <b>গেমের সঠিক নাম</b> লিখে পাঠান, আমি আপনাকে সঙ্গে সঙ্গে রিয়েল ভিআইপি প্রমো কোড ও ডাউনলোড লিংক দিয়ে দেব!`;
+                `🎮 যেকোনো <b>Yono গেমের নাম পাঠান</b> (মনে রাখবেন, এখানে শুধুমাত্র Yono গেম পাওয়া যায়—অন্য কোনো কোম্পানির গেম এখানে পাবেন না)। আমি আপনাকে সঙ্গে সঙ্গে রিয়েল ভিআইপি প্রমো কোড ও ডাউনলোড লিংক দিয়ে দেব!`;
             
             try {
                 let newMsgIds = [];
@@ -602,13 +604,13 @@ bot.on('message', async (msg) => {
     }
 });
 
-const weeklyMessage = `⚡ <b>WEEKLY VIP BONUS & PROMO CODE ALERT!</b> ⚡\n\n` +
+const weeklyMessage = `⚡ <b>WEEKLY VIP BONUS & YONO PROMO CODE ALERT!</b> ⚡\n\n` +
     `👑 <b>Yono Master Head AI Bot Update!</b>\n\n` +
-    `Hey Gamer! All fresh & active VIP promo codes and new game links originate right here in our master bot before going anywhere else! Grab your bonuses now! 💰\n\n` +
+    `Hey Gamer! All fresh & active VIP promo codes and new Yono game links originate right here in our master bot before going anywhere else! Grab your bonuses now! 💰\n\n` +
     `🔥 <b>WHAT TO DO RIGHT NOW:</b>\n` +
-    `• 🎮 Type the name of <b>ANY Game</b> in this chat right now!\n` +
+    `• 🎮 Type the name of <b>ANY Yono Game</b> in this chat right now! (No other company games available here)\n` +
     `• 💎 Claim your daily VIP promo codes and download links instantly!\n\n` +
-    `👑 <i>Type your favorite game name below and grab your free code now! 🚀</i>`;
+    `👑 <i>Type your favorite Yono game name below and grab your free code now! 🚀</i>`;
 
 cron.schedule('0 10 * * 0', () => {
     if (botUsers && botUsers.length > 0) {
@@ -620,4 +622,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Head AI bot running with exclusive master bot persona and supreme source authority!");
+console.log("Yono Master Head AI bot running with exclusive Yono-only game restrictions and supreme source authority!");
