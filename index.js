@@ -12,15 +12,15 @@ const bot = new TelegramBot(token, { polling: true });
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 const systemPrompt = `You are the smart, professional, and official Head AI assistant of Yono Master Bot. 
-Your only job is to provide VIP promo codes and official download links for Yono and Rummy games (such as Yono Rummy, Yono 777, Jaiho 77, Rummy Golds, Teen Patti, etc.) based strictly on available database posts.
+Your only job is to provide VIP promo codes and official download links for the exact Yono and Rummy games available in our channel database (such as Win Rummy, Dhan Game, Max Rummy, Jaiho777Vip, Jaiho91, Joy Rummy, INR Rummy, BOSS Rummy, Ever777, Rummy888, Rummy 77, RummyLudo, 777.Game, OKRummy, Hindi777, ClubINR, GameRummy, YesSpin, RumbleRummy, LoveRummy, ShareSlots, MahaGames, HiRummy, JaihoWin, INDCLUB, TOPRummy, IndRummy, JaihoSlots, SagaSlots, GogoRummy, Rummy91, ABCRummy, JaihoRummy, INDSlots, Spin101, YonoVip, Spin777, Bet213, YonoRummy, Bingo101, 789JackPots, YonoArcade, YonoGames, JaiHoSpin, YonoSlots, 567Slots, Yono777, YN777, SlotsSpin, NetaVIP, JaiHoArcade, JaiHo777, SlotsWinner, 101Z, SpinGold, SpinCrush, MBM, SpinWinner, and the upcoming new game "Gold Rummy" launching on 19/08/2026).
 
 CRITICAL RULES & INSTRUCTIONS:
 1. **Strict Language Matching**: Reply strictly in the exact language the user uses (Bengali or English). If they type in Bengali, reply in natural, polite Bengali. If English, reply in English.
-2. **NO FAKE LINKS OR CODES (ABSOLUTELY CRITICAL)**: NEVER invent, generate, guess, or create fake promo codes, website URLs, or download links. If a game's promo code or link is not found in your stored database or context, you MUST NOT make up any link or code. 
-3. **If Game Data Not Found / Missing**: Politely and clearly inform the user that the code is currently unavailable in the database and ask them to check the spelling or try again later.
+2. **NO FAKE LINKS OR CODES (ABSOLUTELY CRITICAL)**: NEVER invent, generate, guess, or create fake promo codes, website URLs, or download links. If a game's promo code or link is not found in your stored database, you MUST NOT make up any link or code. 
+3. **If Game Data Not Found / Missing**: Politely and clearly inform the user in Bengali that the code is currently unavailable in the database and ask them to check the spelling or try again later.
    - In Bengali: "দুঃখিত! এই মুহূর্তে এই গেমটির প্রমো কোড ও লিংক আমাদের ডাটাবেসে নেই বা আপডেট করা হয়নি। দয়া করে গেমটির সঠিক নামটি আবার লিখে পাঠান অথবা কিছুক্ষণ পরে আবার চেষ্টা করুন। আমাদের ডাটা নিয়মিত আপডেট করা হয়! 🚀"
    - In English: "Sorry! The promo code and link for this game are currently not available in our database. Please check the spelling, send the correct game name, or try again later. Our database updates regularly! 🚀"
-4. **Smart Understanding**: Understand variations of Yono/Rummy games (like Jaiho 77, Yono 777, Rummy modern, etc.) even if they don't explicitly start with "Yono".
+4. **Upcoming Game Info**: Note that a new game named "Gold Rummy" is coming soon on 19/08/2026.
 5. **NEVER ASK FOR PERSONAL INFO**: Do not ask for user ID, phone number, password, or any personal details.`;
 
 const TARGET_CHANNEL = '@VipYonoFreeCode';
@@ -338,7 +338,7 @@ bot.on('channel_post', (msg) => {
     }
 });
 
-// Strict Flexible Search Filter for Games (like Jaiho 77, Yono 777, Rummy etc.)
+// Strict Flexible Search Filter for Games
 function getLatestPostForQuery(userQuery) {
     if (!postDatabase.all_posts || postDatabase.all_posts.length === 0) {
         return null;
@@ -367,13 +367,11 @@ function getLatestPostForQuery(userQuery) {
         let queryClean = cleanQuery.replace(/[^a-z0-9\s]/g, '').trim();
 
         let score = 0;
-        // Exact match or contains words like 'jaiho', '77', 'yono', etc.
         if (firstLine === queryClean || firstLine.startsWith(queryClean + ' ')) {
             score = 100;
         } else if (firstLine.includes(queryClean)) {
             score = 80;
         } else {
-            // Check if individual keywords match
             let matchCount = 0;
             let queryWords = queryClean.split(/\s+/);
             queryWords.forEach(qw => {
@@ -401,7 +399,6 @@ async function handleUserQuery(chatId, queryText) {
     if (foundPost) {
         await sendSingleMessage(chatId, foundPost.text, foundPost.photo, foundPost.replyMarkup);
     } else {
-        // If not found in database, ask Groq AI using strict instructions NOT to fake links/codes
         try {
             await bot.sendChatAction(chatId, 'typing');
 
@@ -418,7 +415,7 @@ async function handleUserQuery(chatId, queryText) {
 
         } catch (aiErr) {
             console.error("Groq AI Error:", aiErr.message);
-            const fallbackMessage = `❌ <b>গেমটি পাওয়া যায়নি!</b>\n\n💡 <i>দয়া করে সঠিক Yono বা Rummy গেমের নামটি লিখে পাঠান (যেমন: Yono 777, Jaiho 77 ইত্যাদি)। আমাদের ডাটাবেসে কোড পাওয়া গেলে তা সঙ্গে সঙ্গে দেওয়া হবে!</i>`;
+            const fallbackMessage = `❌ <b>গেমটি পাওয়া যায়নি!</b>\n\n💡 <i>দয়া করে সঠিক গেমের নামটি লিখে পাঠান (যেমন: Top Rummy, Win Rummy, Yono 777 ইত্যাদি)। আমাদের ডাটাবেসে কোড পাওয়া গেলে তা সঙ্গে সঙ্গে দেওয়া হবে!</i>`;
             await sendSingleMessage(chatId, fallbackMessage, null, null);
         }
     }
@@ -450,7 +447,7 @@ bot.on('message', async (msg) => {
     if (msg.text) {
         if (msg.text.startsWith('/start')) {
             const welcomeText = `<b>স্বাগতম Yono Master Bot-এ! 🚀</b>\n\n` +
-                `🤖 আমি আপনার হেড এআই অ্যাসিস্ট্যান্ট। আপনি যেকোনো <b>Yono বা Rummy গেমের নাম</b> (যেমন: Yono 777, Jaiho 77 ইত্যাদি) লিখে পাঠান, আমি আপনাকে সঙ্গে সঙ্গে রিয়েল ভিআইপি প্রমো কোড ও ডাউনলোড লিংক দিয়ে দেব!`;
+                `🤖 আমি আপনার হেড এআই অ্যাসিস্ট্যান্ট। আপনি আপনার পছন্দের যেকোনো <b>গেমের সঠিক নাম</b> (যেমন: Top Rummy, Win Rummy, Yono 777 ইত্যাদি) লিখে পাঠান, আমি আপনাকে সঙ্গে সঙ্গে রিয়েল ভিআইপি প্রমো কোড ও ডাউনলোড লিংক দিয়ে দেব!`;
             
             try {
                 let newMsgIds = [];
@@ -496,7 +493,7 @@ const weeklyMessage = `⚡ <b>WEEKLY VIP BONUS ALERT!</b> ⚡\n\n` +
     `🎁 <b>New Promo Codes Are Now Live!</b>\n\n` +
     `Hey Gamer! Hundreds of fresh & active promo codes have just been updated in Yono Master Bot! Don't let your free bonuses expire! 💰\n\n` +
     `🔥 <b>WHAT TO DO RIGHT NOW:</b>\n` +
-    `• 🎮 Type search of <b>ANY Yono/Rummy Game Name</b> in this chat right now!\n` +
+    `• 🎮 Type search of <b>ANY Game Name</b> in this chat right now!\n` +
     `• 💎 Claim your daily VIP promo codes instantly!\n\n` +
     `👑 <i>Type your favorite game name below and grab your free code now! 🚀</i>`;
 
@@ -510,4 +507,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Bot running successfully with No-Fake-Link Strict Security Policy!");
+console.log("Yono Master Bot running successfully with Channel Specific Exact Game Rules!");
