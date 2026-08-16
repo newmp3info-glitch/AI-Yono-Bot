@@ -120,7 +120,7 @@ let userMessages = {};
 
 async function generateAndSendAudio(chatId, text) {
     try {
-        const cleanText = text.replace(/<[^>]*>/g, '').substring(0, 200);
+        const cleanText = text.replace(/<[^>]*>/g, '').trim(); 
         
         let detectedLang = 'en';
         if (/[\u0980-\u09FF]/.test(cleanText)) {
@@ -142,7 +142,8 @@ async function generateAndSendAudio(chatId, text) {
 
         if (!detectedLang) detectedLang = 'en';
 
-        const ttsUrl = googleTTS.getAudioUrl(cleanText, {
+        // সম্পূর্ণ লেখার জন্য সমস্ত অডিও পার্টসের লিংক এক সাথে নিয়ে আসা
+        const audioUrls = googleTTS.getAllAudioUrls(cleanText, {
             lang: detectedLang,
             slow: false,
             host: 'https://translate.google.com',
@@ -151,18 +152,28 @@ async function generateAndSendAudio(chatId, text) {
         const fileName = `speech_${chatId}_${Date.now()}.mp3`;
         const filePath = path.join(process.cwd(), fileName);
 
-        const response = await fetch(ttsUrl, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-            }
-        });
+        let audioBuffers = [];
 
-        if (!response.ok) {
-            throw new Error(`TTS fetch failed with status ${response.status}`);
+        // প্রতিটি টুকরো ডাউনলোড করে বাফার অ্যারেতে রাখা
+        for (let item of audioUrls) {
+            const response = await fetch(item.url, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+                }
+            });
+            if (response.ok) {
+                const buffer = Buffer.from(await response.arrayBuffer());
+                audioBuffers.push(buffer);
+            }
         }
 
-        const buffer = Buffer.from(await response.arrayBuffer());
-        fs.writeFileSync(filePath, buffer);
+        if (audioBuffers.length === 0) {
+            throw new Error("Failed to fetch any audio chunks.");
+        }
+
+        // সব টুকরোগুলো এক করে একটি সম্পূর্ণ বড় অডিও ফাইল তৈরি করা
+        const finalBuffer = Buffer.concat(audioBuffers);
+        fs.writeFileSync(filePath, finalBuffer);
 
         try {
             await bot.sendAudio(chatId, filePath, {
@@ -178,7 +189,7 @@ async function generateAndSendAudio(chatId, text) {
             if (fs.existsSync(filePath)) {
                 fs.unlinkSync(filePath);
             }
-        }, 10000);
+        }, 15000);
 
     } catch (e) {
         console.error("Audio generation error:", e);
