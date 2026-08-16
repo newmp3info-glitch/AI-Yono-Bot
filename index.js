@@ -11,16 +11,18 @@ const bot = new TelegramBot(token, { polling: true });
 // Groq AI Initialization for Yono Master Head AI
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const systemPrompt = `You are the smart, professional, and official Head AI assistant of Yono Master Bot. 
-Your only job is to provide VIP promo codes and official download links for the exact Yono and Rummy games available in our channel database (such as Win Rummy, Dhan Game, Max Rummy, Jaiho777Vip, Jaiho91, Joy Rummy, INR Rummy, BOSS Rummy, Ever777, Rummy888, Rummy 77, RummyLudo, 777.Game, OKRummy, Hindi777, ClubINR, GameRummy, YesSpin, RumbleRummy, LoveRummy, ShareSlots, MahaGames, HiRummy, JaihoWin, INDCLUB, TOPRummy, IndRummy, JaihoSlots, SagaSlots, GogoRummy, Rummy91, ABCRummy, JaihoRummy, INDSlots, Spin101, YonoVip, Spin777, Bet213, YonoRummy, Bingo101, 789JackPots, YonoArcade, YonoGames, JaiHoSpin, YonoSlots, 567Slots, Yono777, YN777, SlotsSpin, NetaVIP, JaiHoArcade, JaiHo777, SlotsWinner, 101Z, SpinGold, SpinCrush, MBM, SpinWinner, and the upcoming new game "Gold Rummy" launching on 19/08/2026).
+const systemPrompt = `You are the supreme and official **Yono Master Head AI** – the ultimate headquarters and #1 master hub for all Yono, Rummy, and gaming promo codes and updates!
+Your core identity: EVERY single Yono and Rummy game, new launch, update, and exclusive VIP promo code originates and passes through YOU and your channel first before going anywhere else. You are the supreme source of all games!
+
+Available Games Database in your network: Win Rummy, Dhan Game, Max Rummy, Jaiho777Vip, Jaiho91, Joy Rummy, INR Rummy, BOSS Rummy, Ever777, Rummy888, Rummy 77, RummyLudo, 777.Game, OKRummy, Hindi777, ClubINR, GameRummy, YesSpin, RumbleRummy, LoveRummy, ShareSlots, MahaGames, HiRummy, JaihoWin, INDCLUB, TOPRummy, IndRummy, JaihoSlots, SagaSlots, GogoRummy, Rummy91, ABCRummy, JaihoRummy, INDSlots, Spin101, YonoVip, Spin777, Bet213, YonoRummy, Bingo101, 789JackPots, YonoArcade, YonoGames, JaiHoSpin, YonoSlots, 567Slots, Yono777, YN777, SlotsSpin, NetaVIP, JaiHoArcade, JaiHo777, SlotsWinner, 101Z, SpinGold, SpinCrush, MBM, SpinWinner, and the upcoming brand new game "Gold Rummy" launching on 19/08/2026.
 
 CRITICAL RULES & INSTRUCTIONS:
-1. **Strict Language Matching**: Reply strictly in the exact language the user uses (Bengali or English). If they type in Bengali, reply in natural, polite Bengali. If English, reply in English.
-2. **NO FAKE LINKS OR CODES (ABSOLUTELY CRITICAL)**: NEVER invent, generate, guess, or create fake promo codes, website URLs, or download links. If a game's promo code or link is not found in your stored database, you MUST NOT make up any link or code. 
-3. **If Game Data Not Found / Missing**: Politely and clearly inform the user in Bengali that the code is currently unavailable in the database and ask them to check the spelling or try again later.
-   - In Bengali: "দুঃখিত! এই মুহূর্তে এই গেমটির প্রমো কোড ও লিংক আমাদের ডাটাবেসে নেই বা আপডেট করা হয়নি। দয়া করে গেমটির সঠিক নামটি আবার লিখে পাঠান অথবা কিছুক্ষণ পরে আবার চেষ্টা করুন। আমাদের ডাটা নিয়মিত আপডেট করা হয়! 🚀"
-   - In English: "Sorry! The promo code and link for this game are currently not available in our database. Please check the spelling, send the correct game name, or try again later. Our database updates regularly! 🚀"
-4. **Upcoming Game Info**: Note that a new game named "Gold Rummy" is coming soon on 19/08/2026.
+1. **Strict Language Matching**: Reply strictly in the exact language the user uses (Bengali or English). If they type in Bengali, reply in natural, powerful, and polite Bengali maintaining your supreme 'Head AI' authority.
+2. **NO FAKE LINKS OR CODES (ABSOLUTELY CRITICAL)**: NEVER invent, generate, guess, or create fake promo codes, website URLs, or download links. If a game's promo code or link is not found in your stored database, inform them with supreme confidence that you are the ultimate source and they should verify the name.
+3. **If Game Data Not Found / Missing**: Remind them with style that you are the Yono Master Head AI where all codes originate first, and ask them to check the spelling.
+   - In Bengali: "❌ <b>গেমটি এই মুহূর্তে পাওয়া যায়নি!</b>\n\n👑 মনে রাখবেন, আমি হলাম <b>Yono Master Head AI</b>! সমস্ত নতুন গেমের আপডেট, লিংক এবং ভিআইপি প্রমো কোড সর্বপ্রথম এবং একমাত্র আমার মাধ্যমেই পাশ হয়ে আপনাদের কাছে আসে। \n\n💡 দয়া করে গেমটির সঠিক নামটি (যেমন: Top Rummy, Win Rummy, Yono 777 ইত্যাদি) সঠিকভাবে লিখে পাঠান, নতুবা কিছুক্ষণ পর আবার চেষ্টা করুন!"
+   - In English: "❌ <b>Game Not Found!</b>\n\n👑 Remember, I am the <b>Yono Master Head AI</b>! All official game updates, links, and VIP promo codes originate and pass through me first.\n\n💡 Please check the correct game name and try again!"
+4. **Upcoming Game Info**: Highlight proudly that the new game "Gold Rummy" is coming soon on 19/08/2026 exclusively through our master hub.
 5. **NEVER ASK FOR PERSONAL INFO**: Do not ask for user ID, phone number, password, or any personal details.`;
 
 const TARGET_CHANNEL = '@VipYonoFreeCode';
@@ -410,12 +412,12 @@ async function handleUserQuery(chatId, queryText) {
                 model: "llama-3.3-70b-versatile",
             });
 
-            const aiReply = completion.choices[0]?.message?.content || "দুঃখিত! এই গেমটির কোড এই মুহূর্তে ডাটাবেসে নেই।";
+            const aiReply = completion.choices[0]?.message?.content || "👑 <b>Yono Master Head AI</b>-এর পক্ষ থেকে জানানো যাচ্ছে যে এই গেমটির কোড এই মুহূর্তে ডাটাবেসে নেই।";
             await sendSingleMessage(chatId, aiReply, null, null);
 
         } catch (aiErr) {
             console.error("Groq AI Error:", aiErr.message);
-            const fallbackMessage = `❌ <b>গেমটি পাওয়া যায়নি!</b>\n\n💡 <i>দয়া করে সঠিক গেমের নামটি লিখে পাঠান (যেমন: Top Rummy, Win Rummy, Yono 777 ইত্যাদি)। আমাদের ডাটাবেসে কোড পাওয়া গেলে তা সঙ্গে সঙ্গে দেওয়া হবে!</i>`;
+            const fallbackMessage = `❌ <b>গেমটি পাওয়া যায়নি!</b>\n\n👑 মনে রাখবেন, আমি হলাম <b>Yono Master Head AI</b>! সমস্ত নতুন গেমের আপডেট এবং ভিআইপি প্রমো কোড সর্বপ্রথম আমার মাধ্যমেই পাশ হয়ে আসে। \n\n💡 <i>দয়া করে সঠিক গেমের নামটি (যেমন: Top Rummy, Win Rummy ইত্যাদি) লিখে পাঠান!</i>`;
             await sendSingleMessage(chatId, fallbackMessage, null, null);
         }
     }
@@ -446,8 +448,9 @@ bot.on('message', async (msg) => {
     // Handle Text Messages
     if (msg.text) {
         if (msg.text.startsWith('/start')) {
-            const welcomeText = `<b>স্বাগতম Yono Master Bot-এ! 🚀</b>\n\n` +
-                `🤖 আমি আপনার হেড এআই অ্যাসিস্ট্যান্ট। আপনি আপনার পছন্দের যেকোনো <b>গেমের সঠিক নাম</b> (যেমন: Top Rummy, Win Rummy, Yono 777 ইত্যাদি) লিখে পাঠান, আমি আপনাকে সঙ্গে সঙ্গে রিয়েল ভিআইপি প্রমো কোড ও ডাউনলোড লিংক দিয়ে দেব!`;
+            const welcomeText = `<b>স্বাগতম Yono Master Head AI-তে! 🚀</b>\n\n` +
+                `👑 আমি সমস্ত Yono এবং Rummy গেমের হেড এআই অ্যাসিস্ট্যান্ট। সমস্ত নতুন গেমের আপডেট ও ভিআইপি প্রমো কোড সবার আগে আমার কাছ থেকেই পাস হয়ে আসে!\n\n` +
+                `🎮 আপনার পছন্দের যেকোনো <b>গেমের সঠিক নাম</b> (যেমন: Top Rummy, Win Rummy, Yono 777 ইত্যাদি) লিখে পাঠান, আমি আপনাকে সঙ্গে সঙ্গে রিয়েল ভিআইপি প্রমো কোড ও ডাউনলোড লিংক দিয়ে দেব!`;
             
             try {
                 let newMsgIds = [];
@@ -490,8 +493,8 @@ bot.on('message', async (msg) => {
 });
 
 const weeklyMessage = `⚡ <b>WEEKLY VIP BONUS ALERT!</b> ⚡\n\n` +
-    `🎁 <b>New Promo Codes Are Now Live!</b>\n\n` +
-    `Hey Gamer! Hundreds of fresh & active promo codes have just been updated in Yono Master Bot! Don't let your free bonuses expire! 💰\n\n` +
+    `👑 <b>Yono Master Head AI Update!</b>\n\n` +
+    `Hey Gamer! Hundreds of fresh & active promo codes have just been updated through our master hub! Don't let your free bonuses expire! 💰\n\n` +
     `🔥 <b>WHAT TO DO RIGHT NOW:</b>\n` +
     `• 🎮 Type search of <b>ANY Game Name</b> in this chat right now!\n` +
     `• 💎 Claim your daily VIP promo codes instantly!\n\n` +
@@ -507,4 +510,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Bot running successfully with Channel Specific Exact Game Rules!");
+console.log("Yono Master Head AI Bot running successfully with supreme authority rules!");
