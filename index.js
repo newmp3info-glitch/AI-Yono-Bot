@@ -1,7 +1,6 @@
 import TelegramBotPkg from 'node-telegram-bot-api';
 const TelegramBot = TelegramBotPkg.default || TelegramBotPkg;
 import http from 'http';
-import https from 'https';
 import fs from 'fs';
 import cron from 'node-cron';
 import { Groq } from 'groq-sdk';
@@ -315,11 +314,13 @@ function savePostContent(msg) {
     return false;
 }
 
+// Automatic Channel Post Listener & Database Saver
 bot.on('channel_post', (msg) => {
     const chatUsername = msg.chat.username ? `@${msg.chat.username.toLowerCase()}` : '';
     if (chatUsername === TARGET_CHANNEL.toLowerCase()) {
         const saved = savePostContent(msg);
         if (saved) {
+            console.log(`New post automatically saved from channel ${TARGET_CHANNEL}! Total posts: ${postDatabase.all_posts.length}`);
             let rawText = msg.caption || msg.text || '';
             let entities = msg.caption_entities || msg.entities || [];
             let postTimestamp = Date.now();
@@ -333,6 +334,7 @@ bot.on('channel_post', (msg) => {
     }
 });
 
+// Strict Game Name Search Filter (Prevents random chat/sentences from triggering game posts)
 function getLatestPostForQuery(userQuery) {
     if (!postDatabase.all_posts || postDatabase.all_posts.length === 0) {
         return null;
@@ -340,6 +342,12 @@ function getLatestPostForQuery(userQuery) {
 
     const cleanQuery = userQuery.trim().toLowerCase();
     if (cleanQuery.includes('free fire') || cleanQuery.includes('pubg') || cleanQuery.includes('ludo') || cleanQuery.includes('ff max')) {
+        return null;
+    }
+
+    // If query is a sentence (more than 3 words), it is regular chat, NOT a game search!
+    const words = cleanQuery.split(/\s+/);
+    if (words.length > 3) {
         return null;
     }
 
@@ -356,10 +364,10 @@ function getLatestPostForQuery(userQuery) {
         let queryClean = cleanQuery.replace(/[^a-z0-9\s]/g, '').trim();
 
         let score = 0;
-        if (firstLine.includes(queryClean)) {
+        if (firstLine === queryClean || firstLine.startsWith(queryClean + ' ')) {
             score = 100;
-        } else if (lowerText.includes(queryClean)) {
-            score = 50;
+        } else if (firstLine.includes(queryClean)) {
+            score = 75;
         }
 
         if (score > highestScore) {
@@ -368,7 +376,7 @@ function getLatestPostForQuery(userQuery) {
         }
     });
 
-    return highestScore >= 50 ? matchedPost : null;
+    return highestScore >= 75 ? matchedPost : null;
 }
 
 async function handleUserQuery(chatId, queryText) {
@@ -421,7 +429,7 @@ bot.on('message', async (msg) => {
         }
     }
 
-    // Handle Image / Screenshot OCR Recognition via Robust In-Memory Buffer to Base64
+    // Handle Image / Screenshot OCR Recognition via Buffer to Base64
     if (msg.photo && msg.photo.length > 0) {
         const userLangCode = msg.from?.language_code || 'en';
         try {
@@ -430,7 +438,6 @@ bot.on('message', async (msg) => {
             
             const fileUrl = await bot.getFileLink(fileId);
             
-            // Download image into memory buffer to guarantee compatibility with Groq Vision
             const imageBuffer = await new Promise((resolve, reject) => {
                 https.get(fileUrl, (res) => {
                     if (res.statusCode !== 200) {
@@ -569,4 +576,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Bot running successfully with Buffer Vision OCR & Multilingual support!");
+console.log("Yono Master Bot running successfully with Strict Search Filter & Channel Auto-Save!");
