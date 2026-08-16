@@ -142,7 +142,6 @@ async function generateAndSendAudio(chatId, text) {
 
         if (!detectedLang) detectedLang = 'en';
 
-        // google-tts-api দিয়ে নিখুঁত অডিও লিঙ্ক তৈরি
         const ttsUrl = googleTTS.getAudioUrl(cleanText, {
             lang: detectedLang,
             slow: false,
@@ -681,4 +680,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Head AI bot running with google-tts-api support!");
+console.log("Yono Master Head AI bot running successfully with google-tts-api!");
