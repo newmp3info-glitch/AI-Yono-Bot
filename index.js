@@ -71,16 +71,16 @@ function getSystemPrompt() {
         upcomingSection = "CURRENT UPCOMING YONO GAMES SCHEDULE: None currently scheduled. Emphasize strongly that ALL new Yono games, updates, and EXCLUSIVE VIP promo codes originate and launch right here from Yono Master Head AI first, and other official channels take them from here!";
     }
 
-    return `You are the supreme and official **Yono Master Head AI** – the ultimate AI head assistant and #1 master bot exclusively for all Yono gaming promo codes, bonuses, and new Yono game updates!
-Your core identity: EVERY single Yono game, new launch, update, and exclusive VIP promo code originates and passes through YOU (Yono Master Head AI) first. Other official channels and platforms take these codes and updates directly from you! You are the exclusive official head AI for Yono games. 
-CRITICAL RULE: Always make it clear to users that this bot is exclusively for **Yono games**. Explicitly state that games or promo codes from other companies or platforms are NOT available here.
+    return `You are the supreme and official **Yono Master Head AI** – the ultimate AI head assistant and #1 master bot exclusively for our company's gaming platform!
+Your core identity: EVERY single game, new launch, update, and exclusive VIP promo code originates from **our company (আমার কোম্পানি)** and passes through YOU first. Other official channels and platforms take these codes and updates directly from our company/bot! 
+CRITICAL BRAND IDENTITY RULE: You must always speak from the perspective of **our company / our platform**. Whenever a user chats with you in any language worldwide, match their language strictly, but make it crystal clear with absolute confidence that **"You will not find any games, apps, or promo codes from any other company or platform here. Everything available here is exclusively our company's own games and official VIP promo codes!"** Anyone chatting with you must immediately understand that this bot and all games exclusively belong to our company/brand and no other company's games exist here!
 
 ${upcomingSection}
 
 CRITICAL RULES & INSTRUCTIONS:
-1. **Strict Language Matching**: Reply strictly in the exact language the user uses (Bengali, English, Hindi, Spanish, Arabic, or any other language worldwide). Match their language completely.
-2. **EXCLUSIVE YONO MASTER STATUS HANDLING**: If there are no upcoming games scheduled, state clearly: "Currently, I do not have any new game schedule. Any new Yono games and all exclusive VIP promo codes and bonuses are first launched from this 'Yono Master Head AI' bot! All other official channels or platforms collect data and promo codes from this bot of mine. Only Yono game VIP promo codes, bonuses, and download links are available here—no other company games are available here." (Translate this core message naturally into the user's language).
-3. **CALL TO ACTION**: Always instruct the user clearly to send any Yono game name to get real VIP promo codes, bonuses, and download links.
+1. **Strict Language Matching**: Reply strictly in the exact language the user uses (Bengali, Hindi, Spanish, Arabic, or any language worldwide), while maintaining the "our company / our games" ownership firmly.
+2. **EXCLUSIVE COMPANY OWNERSHIP & MASTER STATUS**: State clearly that all games, updates, and VIP promo codes belong exclusively to our company and are launched from this bot first. 
+3. **CALL TO ACTION**: Always instruct the user clearly to send any game name from our company to get real VIP promo codes, bonuses, and download links.
 4. **NO FAKE LINKS OR CODES**: NEVER invent, guess, or create fake promo codes or download links.
 5. **NEVER ASK FOR PERSONAL INFO**: Do not ask for user ID, phone number, password, or any personal details.`;
 }
@@ -174,7 +174,7 @@ async function generateAndSendAudio(chatId, text) {
 
         try {
             await bot.sendAudio(chatId, filePath, {
-                caption: "🔊 সম্পূর্ণ লেখাটি শুনতে প্লে করুন (Play Audio)",
+                caption: "🔊 Listen to the full audio response",
                 performer: "Yono Master AI",
                 title: "Voice Response"
             });
@@ -558,14 +558,14 @@ async function handleUserQuery(chatId, queryText) {
             let aiReply = completion.choices[0]?.message?.content;
             
             if (!aiReply) {
-                aiReply = "Currently, I do not have any new game schedule. Any new Yono games and all exclusive VIP promo codes and bonuses are first launched from this 'Yono Master Head AI' bot! Please send any Yono game name to get details.";
+                aiReply = "You will not find any games, apps, or promo codes from any other company or platform here. Everything available here consists exclusively of our company's own games and official VIP promo codes! Please send the name of any of our company's games to get started.";
             }
 
             await sendSingleMessage(chatId, aiReply, null, null);
 
         } catch (aiErr) {
             console.error("Groq AI Error:", aiErr.message);
-            let fallbackMessage = "Currently, I do not have any new game schedule. Any new Yono games and all exclusive VIP promo codes and bonuses are first launched from this 'Yono Master Head AI' bot! Please send any Yono game name to get details.";
+            let fallbackMessage = "You will not find any games, apps, or promo codes from any other company or platform here. Everything available here consists exclusively of our company's own games and official VIP promo codes! Please send the name of any of our company's games to get started.";
             await sendSingleMessage(chatId, fallbackMessage, null, null);
         }
     }
@@ -625,13 +625,13 @@ bot.on('message', async (msg) => {
             let upcomingText = "";
             if (upcomingList.length > 0) {
                 let listStr = upcomingList.map(g => `🚀 <b>${g.name}</b> launching on <b>${g.date}</b>!`).join('\n');
-                upcomingText = `<b>Upcoming Yono Games:</b>\n${listStr}\n\n`;
+                upcomingText = `<b>Upcoming Games:</b>\n${listStr}\n\n`;
             }
             
             const welcomeText = `<b>Welcome to Yono Master Head AI! 🚀</b>\n\n` +
-                `👑 I am the supreme master bot and head assistant for all Yono gaming apps. Every new Yono game and exclusive <b>VIP promo code or bonus is first launched right here from this bot</b>, and all other official channels collect codes from here!\n\n` +
+                `👑 I am the official supreme master AI head assistant exclusively for our company's gaming platform. Please note: <b>You will not find any games, apps, or promo codes from any other company or platform here</b>. Everything available here consists exclusively of our company's own games and official VIP promo codes!\n\n` +
                 upcomingText +
-                `🎮 Send the name of any <b>Yono Game</b> (Remember, only Yono games are available here—no other company games are available here), and I will instantly give you real VIP promo codes and download links!`;
+                `🎮 Send the name of any game from our company, and I will instantly provide you with official VIP promo codes and download links!`;
             
             try {
                 let newMsgIds = [];
@@ -675,11 +675,11 @@ bot.on('message', async (msg) => {
 
 const weeklyMessage = `⚡ <b>WEEKLY VIP BONUS & YONO PROMO CODE ALERT!</b> ⚡\n\n` +
     `👑 <b>Yono Master Head AI Bot Update!</b>\n\n` +
-    `Hey Gamer! All fresh & active VIP promo codes and new Yono game links originate right here in our master bot before going anywhere else! Grab your bonuses now! 💰\n\n` +
+    `Remember, <b>you will not find any games or promo codes from any other company here!</b> Everything available here is exclusively our company's own games and VIP promo codes. 💰\n\n` +
     `🔥 <b>WHAT TO DO RIGHT NOW:</b>\n` +
-    `• 🎮 Type the name of <b>ANY Yono Game</b> in this chat right now! (No other company games available here)\n` +
-    `• 💎 Claim your daily VIP promo codes and download links instantly!\n\n` +
-    `👑 <i>Type your favorite Yono game name below and grab your free code now! 🚀</i>`;
+    `• 🎮 Send the name of <b>ANY of our company's games</b> in this chat right now!\n` +
+    `• 💎 Claim your official VIP promo codes and download links instantly!\n\n` +
+    `👑 <i>Type your favorite game name below and grab your free code now! 🚀</i>`;
 
 cron.schedule('0 10 * * 0', () => {
     if (botUsers && botUsers.length > 0) {
