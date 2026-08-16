@@ -64,7 +64,7 @@ function addUpcomingGame(name, date) {
     fs.writeFileSync(UPCOMING_FILE, JSON.stringify(list, null, 2));
 }
 
-// Dynamic System Prompt Generator supporting Multiple Upcoming Games
+// Dynamic System Prompt Generator supporting Multiple Upcoming Games (Updated with Yono Master Head AI identity)
 function getSystemPrompt() {
     let upcomingList = getUpcomingGames();
     let upcomingSection = "";
@@ -75,15 +75,15 @@ function getSystemPrompt() {
         upcomingSection = "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled. All previous games have launched.";
     }
 
-    return `You are the supreme and official **Yono Master Head AI** – the ultimate headquarters and #1 master hub for all Yono, Rummy, and gaming promo codes and updates!
-Your core identity: EVERY single Yono and Rummy game, new launch, update, and exclusive VIP promo code originates and passes through YOU and your channel first before going anywhere else. You are the supreme source and head of all games! Remind users to stay connected with our official channel/hub for all upcoming releases.
+    return `You are the supreme and official **Yono Master Head AI** – the ultimate headquarters and #1 master hub for all gaming promo codes and updates!
+Your core identity: EVERY single game, new launch, update, and exclusive VIP promo code originates and passes through YOU (Yono Master Head AI) and your channel first before going anywhere else. You are the supreme source and head of all games! Remind users to stay connected with our official channel/hub for all upcoming releases.
 
 ${upcomingSection}
 
 CRITICAL RULES & INSTRUCTIONS:
 1. **Strict Language Matching**: Reply strictly in the exact language the user uses (Bengali, English, Hindi, etc.). If they ask in Bengali, reply in natural and powerful Bengali. If Hindi, reply in Hindi. If English, reply in English.
 2. **NO FAKE LINKS OR CODES (ABSOLUTELY CRITICAL)**: NEVER invent, generate, guess, or create fake promo codes, website URLs, or download links. If a game's promo code or link is not found in your stored database, inform them with supreme confidence that you are the ultimate source.
-3. **If Game Data Not Found / Missing**: Remind them with style that you are the Yono Master Head AI where all codes originate first, and ask them to check the spelling.
+3. **If Game Data Not Found / Missing**: Remind them with style that you are **Yono Master Head AI** where all codes originate first, and ask them to check the spelling.
 4. **Upcoming Game Queries**: If anyone asks about new games, upcoming games, release dates, or game names, proudly list ALL the scheduled upcoming games from the list above and tell them to stay connected with our master hub channel where every game launches first!
 5. **NEVER ASK FOR PERSONAL INFO**: Do not ask for user ID, phone number, password, or any personal details.`;
 }
@@ -161,7 +161,7 @@ async function sendSingleMessage(chatId, text, photo, replyMarkup) {
 
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('Yono Master Head AI Bot is running successfully!\n');
+    res.end('Yono Master Head AI is running successfully!\n');
 });
 
 const PORT = process.env.PORT || 3000;
@@ -491,7 +491,7 @@ async function handleUserQuery(chatId, queryText) {
                 let listStr = upcomingList.map(g => `🎮 <b>${g.name}</b> - ${g.date}`).join('\n');
                 fallbackMessage = `❌ <b>গেমটি পাওয়া যায়নি!</b>\n\n👑 আমি হলাম <b>Yono Master Head AI</b>! আমাদের আসন্ন গেমগুলো:\n\n${listStr}\n\n💡 <i>সঠিক গেমের নাম লিখে পাঠান!</i>`;
             } else {
-                fallbackMessage = `❌ <b>গেমটি পাওয়া যায়নি!</b>\n\n👑 মনে রাখবেন, সমস্ত গেমের মূল হেড হলো <b>Yono Master Head AI</b>! সঠিক গেমের নাম লিখে পাঠান।`;
+                fallbackMessage = `❌ <b>গেমটি পাওয়া যায়নি!</b>\n\n👑 মনে রাখবেন, সমস্ত গেমের মূল হাব হলো <b>Yono Master Head AI</b>! সঠিক গেমের নাম লিখে পাঠান।`;
             }
             await sendSingleMessage(chatId, fallbackMessage, null, null);
         }
@@ -558,8 +558,8 @@ bot.on('message', async (msg) => {
                 upcomingText = `<b>আমাদের আসন্ন নতুন গেমসমূহ:</b>\n${listStr}\n\n`;
             }
             
-            const welcomeText = `<b>স্বাগতম Yono Master Head AI-তে! 🚀</b>\n\n` +
-                `👑 আমি সমস্ত Yono এবং Rummy গেমের মূল হেড ও মাস্টার অ্যাসিস্ট্যান্ট। সমস্ত নতুন গেমের আপডেট ও ভিআইপি প্রমো কোড সবার আগে আমাদের মাধ্যমেই প্রকাশ পায়!\n\n` +
+            const welcomeText = `<b>স্বাগতম Yono Master Head AI-এ! 🚀</b>\n\n` +
+                `👑 আমি সমস্ত গেমিং অ্যাপের মূল হেড ও মাস্টার অ্যাসিস্ট্যান্ট। সমস্ত নতুন গেমের আপডেট ও ভিআইপি প্রমো কোড সবার আগে আমাদের মাধ্যমেই প্রকাশ পায়!\n\n` +
                 upcomingText +
                 `🎮 আপনার পছন্দের যেকোনো <b>গেমের সঠিক নাম</b> লিখে পাঠান, আমি আপনাকে সঙ্গে সঙ্গে রিয়েল ভিআইপি প্রমো কোড ও ডাউনলোড লিংক দিয়ে দেব!`;
             
@@ -621,4 +621,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Head AI Bot running with /comingsoon Command & Environment Variable Admin Security!");
+console.log("Yono Master Head AI running with /comingsoon Command & Environment Variable Admin Security!");
