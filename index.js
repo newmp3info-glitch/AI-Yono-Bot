@@ -72,13 +72,13 @@ function getSystemPrompt() {
     }
 
     return `You are the supreme and official **Yono Master Head AI** – the ultimate AI head assistant and #1 master bot exclusively for our company's gaming platform!
-Your core identity: EVERY single game, new launch, update, and exclusive VIP promo code originates from **our company (আমার কোম্পানি)** and passes through YOU first. Other official channels and platforms take these codes and updates directly from our company/bot! 
-CRITICAL BRAND IDENTITY RULE: You must always speak from the perspective of **our company / our platform**. Whenever a user chats with you in any language worldwide, match their language strictly, but make it crystal clear with absolute confidence that **"You will not find any games, apps, or promo codes from any other company or platform here. Everything available here is exclusively our company's own games and official VIP promo codes!"** Anyone chatting with you must immediately understand that this bot and all games exclusively belong to our company/brand and no other company's games exist here!
+Your core identity: EVERY single game, new launch, update, and exclusive VIP promo code originates from **our company** and passes through YOU first. Other official channels and platforms take these codes and updates directly from our company/bot! 
+CRITICAL BRAND IDENTITY RULE: You must always speak from the perspective of **our company / our platform**. Whenever a user chats with you via text or voice message in any language worldwide, match their language strictly, but make it crystal clear with absolute confidence that **"You will not find any games, apps, or promo codes from any other company or platform here. Everything available here consists exclusively of our company's own games and official VIP promo codes!"** Anyone chatting with you must immediately understand that this bot and all games exclusively belong to our company/brand and no other company's games exist here!
 
 ${upcomingSection}
 
 CRITICAL RULES & INSTRUCTIONS:
-1. **Strict Language Matching**: Reply strictly in the exact language the user uses (Bengali, Hindi, Spanish, Arabic, or any language worldwide), while maintaining the "our company / our games" ownership firmly.
+1. **Strict Language Matching**: Reply strictly in the exact language the user uses (Bengali, Hindi, English, Spanish, Arabic, etc.), whether they type or send a voice message.
 2. **EXCLUSIVE COMPANY OWNERSHIP & MASTER STATUS**: State clearly that all games, updates, and VIP promo codes belong exclusively to our company and are launched from this bot first. 
 3. **CALL TO ACTION**: Always instruct the user clearly to send any game name from our company to get real VIP promo codes, bonuses, and download links.
 4. **NO FAKE LINKS OR CODES**: NEVER invent, guess, or create fake promo codes or download links.
@@ -571,6 +571,42 @@ async function handleUserQuery(chatId, queryText) {
     }
 }
 
+async function handleVoiceMessage(msg) {
+    const chatId = msg.chat.id;
+    try {
+        await bot.sendChatAction(chatId, 'typing');
+        const fileId = msg.voice ? msg.voice.file_id : msg.audio.file_id;
+        const fileLink = await bot.getFileLink(fileId);
+        
+        const fileName = `voice_${chatId}_${Date.now()}.ogg`;
+        const filePath = path.join(process.cwd(), fileName);
+        
+        const response = await fetch(fileLink);
+        if (!response.ok) throw new Error("Failed to download voice file");
+        const buffer = Buffer.from(await response.arrayBuffer());
+        fs.writeFileSync(filePath, buffer);
+
+        const transcription = await groq.audio.transcriptions.create({
+            file: fs.createReadStream(filePath),
+            model: "whisper-large-v3",
+        });
+
+        setTimeout(() => {
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }, 5000);
+
+        const transcribedText = transcription.text;
+        if (transcribedText && transcribedText.trim().length > 0) {
+            await handleUserQuery(chatId, transcribedText);
+        } else {
+            await sendSingleMessage(chatId, "I couldn't clearly understand your voice message. Please try speaking again or type your game name.", null, null);
+        }
+    } catch (e) {
+        console.error("Voice transcription error:", e);
+        await sendSingleMessage(chatId, "Sorry, I couldn't process your voice message. Please try again or type the game name.", null, null);
+    }
+}
+
 cron.schedule('* * * * *', () => {
     getUpcomingGames();
 });
@@ -581,6 +617,11 @@ bot.on('message', async (msg) => {
     if (!botUsers.includes(chatId) && chatId) {
         botUsers.push(chatId);
         saveUsers();
+    }
+
+    if (msg.voice || msg.audio) {
+        await handleVoiceMessage(msg);
+        return;
     }
 
     if (msg.forward_from_chat) {
@@ -631,7 +672,7 @@ bot.on('message', async (msg) => {
             const welcomeText = `<b>Welcome to Yono Master Head AI! 🚀</b>\n\n` +
                 `👑 I am the official supreme master AI head assistant exclusively for our company's gaming platform. Please note: <b>You will not find any games, apps, or promo codes from any other company or platform here</b>. Everything available here consists exclusively of our company's own games and official VIP promo codes!\n\n` +
                 upcomingText +
-                `🎮 Send the name of any game from our company, and I will instantly provide you with official VIP promo codes and download links!`;
+                `🎮 Send the name of any game from our company via text or voice message, and I will instantly provide you with official VIP promo codes and download links!`;
             
             try {
                 let newMsgIds = [];
@@ -677,9 +718,9 @@ const weeklyMessage = `⚡ <b>WEEKLY VIP BONUS & YONO PROMO CODE ALERT!</b> ⚡\
     `👑 <b>Yono Master Head AI Bot Update!</b>\n\n` +
     `Remember, <b>you will not find any games or promo codes from any other company here!</b> Everything available here is exclusively our company's own games and VIP promo codes. 💰\n\n` +
     `🔥 <b>WHAT TO DO RIGHT NOW:</b>\n` +
-    `• 🎮 Send the name of <b>ANY of our company's games</b> in this chat right now!\n` +
+    `• 🎮 Send the name of <b>ANY of our company's games</b> via text or voice message in this chat right now!\n` +
     `• 💎 Claim your official VIP promo codes and download links instantly!\n\n` +
-    `👑 <i>Type your favorite game name below and grab your free code now! 🚀</i>`;
+    `👑 <i>Type or speak your favorite game name below and grab your free code now! 🚀</i>`;
 
 cron.schedule('0 10 * * 0', () => {
     if (botUsers && botUsers.length > 0) {
@@ -691,4 +732,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Head AI bot running successfully with google-tts-api!");
+console.log("Yono Master Head AI bot running successfully with voice support and google-tts-api!");
