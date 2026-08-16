@@ -1,15 +1,17 @@
 {
-  "name": "ai-yono-bot",
+  "name": "yono-master-head-ai",
   "version": "1.0.0",
-  "description": "Telegram Yono Bot with Groq Llama AI",
+  "description": "Yono Master Head AI Bot",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "start": "node index.js"
   },
   "dependencies": {
-    "groq-sdk": "latest",
-    "node-cron": "latest",
-    "node-telegram-bot-api": "latest"
+    "gtts": "^1.2.0",
+    "groq-sdk": "^0.7.0",
+    "langdetect": "^0.2.1",
+    "node-cron": "^3.0.3",
+    "node-telegram-bot-api": "^0.66.0"
   }
 }
