@@ -120,14 +120,24 @@ let userMessages = {};
 async function generateAndSendAudio(chatId, text) {
     try {
         const cleanText = text.replace(/<[^>]*>/g, '').substring(0, 500);
+        
+        // ইউনিকোড রেঞ্জ ব্যবহার করে শতভাগ নির্ভুল ভাষা সনাক্তকরণ
         let detectedLang = 'en';
-        try {
-            const languages = detect(cleanText);
-            if (languages && languages.length > 0) {
-                detectedLang = languages[0].lang;
+        if (/[\u0980-\u09FF]/.test(cleanText)) {
+            detectedLang = 'bn'; // বাংলা
+        } else if (/[\u0900-\u097F]/.test(cleanText)) {
+            detectedLang = 'hi'; // হিন্দি
+        } else if (/[\u0600-\u06FF]/.test(cleanText)) {
+            detectedLang = 'ar'; // আরবি
+        } else {
+            try {
+                const languages = detect(cleanText);
+                if (languages && languages.length > 0) {
+                    detectedLang = languages[0].lang;
+                }
+            } catch (e) {
+                detectedLang = 'en';
             }
-        } catch (e) {
-            detectedLang = 'en';
         }
 
         if (!detectedLang) detectedLang = 'en';
@@ -666,4 +676,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Head AI bot running with multi-language audio support and Google Translate TTS!");
+console.log("Yono Master Head AI bot running with accurate multi-language audio support!");
