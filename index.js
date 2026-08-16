@@ -142,7 +142,6 @@ async function generateAndSendAudio(chatId, text) {
 
         if (!detectedLang) detectedLang = 'en';
 
-        // সম্পূর্ণ লেখার জন্য সমস্ত অডিও পার্টসের লিংক এক সাথে নিয়ে আসা
         const audioUrls = googleTTS.getAllAudioUrls(cleanText, {
             lang: detectedLang,
             slow: false,
@@ -154,7 +153,6 @@ async function generateAndSendAudio(chatId, text) {
 
         let audioBuffers = [];
 
-        // প্রতিটি টুকরো ডাউনলোড করে বাফার অ্যারেতে রাখা
         for (let item of audioUrls) {
             const response = await fetch(item.url, {
                 headers: {
@@ -171,7 +169,6 @@ async function generateAndSendAudio(chatId, text) {
             throw new Error("Failed to fetch any audio chunks.");
         }
 
-        // সব টুকরোগুলো এক করে একটি সম্পূর্ণ বড় অডিও ফাইল তৈরি করা
         const finalBuffer = Buffer.concat(audioBuffers);
         fs.writeFileSync(filePath, finalBuffer);
 
@@ -501,6 +498,9 @@ function getLatestPostForQuery(userQuery) {
 
     if (cleanQuery.length < 2) return null;
 
+    let queryClean = cleanQuery.replace(/[^\p{L}\p{N}\s]/gu, '').trim();
+    if (!queryClean) return null;
+
     let matchedPost = null;
     let highestScore = 0;
 
@@ -508,8 +508,8 @@ function getLatestPostForQuery(userQuery) {
         if (!post.text) return;
         let lowerText = post.text.toLowerCase();
         
-        let firstLine = lowerText.split('\n')[0].replace(/[^a-z0-9\s]/g, '').trim();
-        let queryClean = cleanQuery.replace(/[^a-z0-9\s]/g, '').trim();
+        let firstLine = lowerText.split('\n')[0].replace(/[^\p{L}\p{N}\s]/gu, '').trim();
+        if (!firstLine) return;
 
         let score = 0;
         if (firstLine === queryClean || firstLine.startsWith(queryClean + ' ')) {
