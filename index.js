@@ -6,6 +6,7 @@ import path from 'path';
 import cron from 'node-cron';
 import { Groq } from 'groq-sdk';
 import { detect } from 'langdetect';
+import googleTTS from 'google-tts-api';
 
 const token = process.env.BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
@@ -119,16 +120,15 @@ let userMessages = {};
 
 async function generateAndSendAudio(chatId, text) {
     try {
-        const cleanText = text.replace(/<[^>]*>/g, '').substring(0, 500);
+        const cleanText = text.replace(/<[^>]*>/g, '').substring(0, 200);
         
-        // ইউনিকোড রেঞ্জ ব্যবহার করে শতভাগ নির্ভুল ভাষা সনাক্তকরণ
         let detectedLang = 'en';
         if (/[\u0980-\u09FF]/.test(cleanText)) {
-            detectedLang = 'bn'; // বাংলা
+            detectedLang = 'bn'; 
         } else if (/[\u0900-\u097F]/.test(cleanText)) {
-            detectedLang = 'hi'; // হিন্দি
+            detectedLang = 'hi'; 
         } else if (/[\u0600-\u06FF]/.test(cleanText)) {
-            detectedLang = 'ar'; // আরবি
+            detectedLang = 'ar'; 
         } else {
             try {
                 const languages = detect(cleanText);
@@ -142,10 +142,15 @@ async function generateAndSendAudio(chatId, text) {
 
         if (!detectedLang) detectedLang = 'en';
 
+        // google-tts-api দিয়ে নিখুঁত অডিও লিঙ্ক তৈরি
+        const ttsUrl = googleTTS.getAudioUrl(cleanText, {
+            lang: detectedLang,
+            slow: false,
+            host: 'https://translate.google.com',
+        });
+
         const fileName = `speech_${chatId}_${Date.now()}.mp3`;
         const filePath = path.join(process.cwd(), fileName);
-
-        const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText)}&tl=${detectedLang}&client=tw-ob`;
 
         const response = await fetch(ttsUrl, {
             headers: {
@@ -676,4 +681,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Head AI bot running with accurate multi-language audio support!");
+console.log("Yono Master Head AI bot running with google-tts-api support!");
