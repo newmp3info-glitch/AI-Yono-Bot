@@ -138,7 +138,15 @@ async function generateAndSendAudio(chatId, text) {
                 console.error("Audio generation error:", err);
                 return;
             }
-            await bot.sendVoice(chatId, fileName);
+            try {
+                await bot.sendAudio(chatId, fileName, {
+                    caption: "🔊 Listen to full text (Play Audio)",
+                    performer: "Yono Master AI",
+                    title: "Voice Response"
+                });
+            } catch (sendErr) {
+                console.error("Audio send error:", sendErr);
+            }
             fs.unlink(fileName, (err) => {});
         });
     } catch (e) {
@@ -152,7 +160,7 @@ async function sendSingleMessage(chatId, text, photo, replyMarkup) {
         disable_web_page_preview: true 
     };
 
-    const listenButton = { text: "Listen", callback_data: "listen_btn" };
+    const listenButton = { text: "🔊 Listen Audio", callback_data: "listen_btn" };
     
     if (replyMarkup && replyMarkup.inline_keyboard) {
         replyMarkup.inline_keyboard.push([listenButton]);
