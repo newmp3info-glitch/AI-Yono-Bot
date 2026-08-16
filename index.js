@@ -11,25 +11,82 @@ const bot = new TelegramBot(token, { polling: true });
 // Groq AI Initialization for Yono Master Head AI
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const systemPrompt = `You are the supreme and official **Yono Master Head AI** – the ultimate headquarters and #1 master hub for all Yono, Rummy, and gaming promo codes and updates!
-Your core identity: EVERY single Yono and Rummy game, new launch, update, and exclusive VIP promo code originates and passes through YOU and your channel first before going anywhere else. You are the supreme source of all games!
-
-Available Games Database in your network: Win Rummy, Dhan Game, Max Rummy, Jaiho777Vip, Jaiho91, Joy Rummy, INR Rummy, BOSS Rummy, Ever777, Rummy888, Rummy 77, RummyLudo, 777.Game, OKRummy, Hindi777, ClubINR, GameRummy, YesSpin, RumbleRummy, LoveRummy, ShareSlots, MahaGames, HiRummy, JaihoWin, INDCLUB, TOPRummy, IndRummy, JaihoSlots, SagaSlots, GogoRummy, Rummy91, ABCRummy, JaihoRummy, INDSlots, Spin101, YonoVip, Spin777, Bet213, YonoRummy, Bingo101, 789JackPots, YonoArcade, YonoGames, JaiHoSpin, YonoSlots, 567Slots, Yono777, YN777, SlotsSpin, NetaVIP, JaiHoArcade, JaiHo777, SlotsWinner, 101Z, SpinGold, SpinCrush, MBM, SpinWinner, and the upcoming brand new game "Gold Rummy" launching on 19/08/2026.
-
-CRITICAL RULES & INSTRUCTIONS:
-1. **Strict Language Matching**: Reply strictly in the exact language the user uses (Bengali or English). If they type in Bengali, reply in natural, powerful, and polite Bengali maintaining your supreme 'Head AI' authority.
-2. **NO FAKE LINKS OR CODES (ABSOLUTELY CRITICAL)**: NEVER invent, generate, guess, or create fake promo codes, website URLs, or download links. If a game's promo code or link is not found in your stored database, inform them with supreme confidence that you are the ultimate source and they should verify the name.
-3. **If Game Data Not Found / Missing**: Remind them with style that you are the Yono Master Head AI where all codes originate first, and ask them to check the spelling.
-   - In Bengali: "❌ <b>গেমটি এই মুহূর্তে পাওয়া যায়নি!</b>\n\n👑 মনে রাখবেন, আমি হলাম <b>Yono Master Head AI</b>! সমস্ত নতুন গেমের আপডেট, লিংক এবং ভিআইপি প্রমো কোড সর্বপ্রথম এবং একমাত্র আমার মাধ্যমেই পাশ হয়ে আপনাদের কাছে আসে। \n\n💡 দয়া করে গেমটির সঠিক নামটি (যেমন: Top Rummy, Win Rummy, Yono 777 ইত্যাদি) সঠিকভাবে লিখে পাঠান, নতুবা কিছুক্ষণ পর আবার চেষ্টা করুন!"
-   - In English: "❌ <b>Game Not Found!</b>\n\n👑 Remember, I am the <b>Yono Master Head AI</b>! All official game updates, links, and VIP promo codes originate and pass through me first.\n\n💡 Please check the correct game name and try again!"
-4. **Upcoming Game Info**: Highlight proudly that the new game "Gold Rummy" is coming soon on 19/08/2026 exclusively through our master hub.
-5. **NEVER ASK FOR PERSONAL INFO**: Do not ask for user ID, phone number, password, or any personal details.`;
-
 const TARGET_CHANNEL = '@VipYonoFreeCode';
- 
 const POSTS_FILE = 'posts.json';
 const USERS_FILE = 'users.json';
 const VOICE_ID_FILE = 'voice_id.txt';
+const UPCOMING_FILE = 'upcoming.json';
+
+// 🔒 Render Environment Variable থেকে অ্যাডমিন আইডি রিড করা হবে
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID ? Number(process.env.ADMIN_CHAT_ID) : null;
+
+// Initialize Upcoming Games File as an Array if not exists
+if (!fs.existsSync(UPCOMING_FILE)) {
+    fs.writeFileSync(UPCOMING_FILE, JSON.stringify([], null, 2));
+}
+
+// Parse DD/MM/YYYY into timestamp expiring at 8:00 AM on that day
+function parseUpcomingExpiry(dateStr) {
+    try {
+        let parts = dateStr.trim().split('/');
+        if (parts.length === 3) {
+            let day = parseInt(parts[0], 10);
+            let month = parseInt(parts[1], 10) - 1; // 0-indexed month
+            let year = parseInt(parts[2], 10);
+            let expiryDate = new Date(year, month, day, 8, 0, 0);
+            return expiryDate.getTime();
+        }
+    } catch (e) {}
+    return Date.now() + (24 * 60 * 60 * 1000);
+}
+
+function getUpcomingGames() {
+    try {
+        let data = JSON.parse(fs.readFileSync(UPCOMING_FILE, 'utf8'));
+        if (!Array.isArray(data)) data = [data];
+        
+        let now = Date.now();
+        let activeGames = data.filter(g => g.expiry && now < g.expiry);
+        
+        if (activeGames.length !== data.length) {
+            fs.writeFileSync(UPCOMING_FILE, JSON.stringify(activeGames, null, 2));
+        }
+        return activeGames;
+    } catch (e) {
+        return [];
+    }
+}
+
+function addUpcomingGame(name, date) {
+    let list = getUpcomingGames();
+    let expiry = parseUpcomingExpiry(date);
+    list.push({ name: name.trim(), date: date.trim(), expiry: expiry });
+    fs.writeFileSync(UPCOMING_FILE, JSON.stringify(list, null, 2));
+}
+
+// Dynamic System Prompt Generator supporting Multiple Upcoming Games
+function getSystemPrompt() {
+    let upcomingList = getUpcomingGames();
+    let upcomingSection = "";
+
+    if (upcomingList.length > 0) {
+        upcomingSection = "CURRENT UPCOMING GAMES SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n');
+    } else {
+        upcomingSection = "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled. All previous games have launched.";
+    }
+
+    return `You are the supreme and official **Yono Master Head AI** – the ultimate headquarters and #1 master hub for all Yono, Rummy, and gaming promo codes and updates!
+Your core identity: EVERY single Yono and Rummy game, new launch, update, and exclusive VIP promo code originates and passes through YOU and your channel first before going anywhere else. You are the supreme source and head of all games! Remind users to stay connected with our official channel/hub for all upcoming releases.
+
+${upcomingSection}
+
+CRITICAL RULES & INSTRUCTIONS:
+1. **Strict Language Matching**: Reply strictly in the exact language the user uses (Bengali, English, Hindi, etc.). If they ask in Bengali, reply in natural and powerful Bengali. If Hindi, reply in Hindi. If English, reply in English.
+2. **NO FAKE LINKS OR CODES (ABSOLUTELY CRITICAL)**: NEVER invent, generate, guess, or create fake promo codes, website URLs, or download links. If a game's promo code or link is not found in your stored database, inform them with supreme confidence that you are the ultimate source.
+3. **If Game Data Not Found / Missing**: Remind them with style that you are the Yono Master Head AI where all codes originate first, and ask them to check the spelling.
+4. **Upcoming Game Queries**: If anyone asks about new games, upcoming games, release dates, or game names, proudly list ALL the scheduled upcoming games from the list above and tell them to stay connected with our master hub channel where every game launches first!
+5. **NEVER ASK FOR PERSONAL INFO**: Do not ask for user ID, phone number, password, or any personal details.`;
+}
 
 if (!fs.existsSync(POSTS_FILE)) {
     fs.writeFileSync(POSTS_FILE, JSON.stringify({ all_posts: [] }, null, 2));
@@ -406,22 +463,45 @@ async function handleUserQuery(chatId, queryText) {
 
             const completion = await groq.chat.completions.create({
                 messages: [
-                    { role: "system", content: systemPrompt },
+                    { role: "system", content: getSystemPrompt() },
                     { role: "user", content: queryText }
                 ],
                 model: "llama-3.3-70b-versatile",
             });
 
-            const aiReply = completion.choices[0]?.message?.content || "👑 <b>Yono Master Head AI</b>-এর পক্ষ থেকে জানানো যাচ্ছে যে এই গেমটির কোড এই মুহূর্তে ডাটাবেসে নেই।";
+            let upcomingList = getUpcomingGames();
+            let aiReply = completion.choices[0]?.message?.content;
+            
+            if (!aiReply) {
+                if (upcomingList.length > 0) {
+                    let listStr = upcomingList.map(g => `🎮 <b>${g.name}</b> - লঞ্চ তারিখ: <b>${g.date}</b>`).join('\n');
+                    aiReply = `👑 <b>Yono Master Head AI</b>-এর পক্ষ থেকে জানানো যাচ্ছে যে আমাদের আসন্ন গেমগুলো:\n\n${listStr}\n\n💡 <i>সবার আগে সমস্ত আপডেট পেতে আমাদের চ্যানেলের সাথেই থাকুন!</i>`;
+                } else {
+                    aiReply = `👑 <b>Yono Master Head AI</b> হলো সমস্ত গেমের প্রধান মাস্টার হাব! নতুন গেমের আপডেট শীঘ্রই আসছে, আমাদের সাথেই থাকুন।`;
+                }
+            }
+
             await sendSingleMessage(chatId, aiReply, null, null);
 
         } catch (aiErr) {
             console.error("Groq AI Error:", aiErr.message);
-            const fallbackMessage = `❌ <b>গেমটি পাওয়া যায়নি!</b>\n\n👑 মনে রাখবেন, আমি হলাম <b>Yono Master Head AI</b>! সমস্ত নতুন গেমের আপডেট এবং ভিআইপি প্রমো কোড সর্বপ্রথম আমার মাধ্যমেই পাশ হয়ে আসে। \n\n💡 <i>দয়া করে সঠিক গেমের নামটি (যেমন: Top Rummy, Win Rummy ইত্যাদি) লিখে পাঠান!</i>`;
+            let upcomingList = getUpcomingGames();
+            let fallbackMessage = "";
+            if (upcomingList.length > 0) {
+                let listStr = upcomingList.map(g => `🎮 <b>${g.name}</b> - ${g.date}`).join('\n');
+                fallbackMessage = `❌ <b>গেমটি পাওয়া যায়নি!</b>\n\n👑 আমি হলাম <b>Yono Master Head AI</b>! আমাদের আসন্ন গেমগুলো:\n\n${listStr}\n\n💡 <i>সঠিক গেমের নাম লিখে পাঠান!</i>`;
+            } else {
+                fallbackMessage = `❌ <b>গেমটি পাওয়া যায়নি!</b>\n\n👑 মনে রাখবেন, সমস্ত গেমের মূল হেড হলো <b>Yono Master Head AI</b>! সঠিক গেমের নাম লিখে পাঠান।`;
+            }
             await sendSingleMessage(chatId, fallbackMessage, null, null);
         }
     }
 }
+
+// Background Cron Job to check and auto-expire upcoming games every minute
+cron.schedule('* * * * *', () => {
+    getUpcomingGames();
+});
 
 bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
@@ -445,12 +525,43 @@ bot.on('message', async (msg) => {
         }
     }
 
+    // 🔒 Secure Admin-Only Protection with /comingsoon Command
+    if (msg.text && msg.text.startsWith('/comingsoon')) {
+        if (!ADMIN_CHAT_ID || chatId !== ADMIN_CHAT_ID) {
+            await bot.sendMessage(chatId, `❌ <b>Access Denied!</b>\n\n👑 আপনি এই কমান্ড ব্যবহার করার অনুমতিপ্রাপ্ত নন। শুধুমাত্র <b>Yono Master Head AI</b>-এর অ্যাডমিনই নতুন গেম সেট করতে পারেন!`, { parse_mode: "HTML" });
+            return;
+        }
+
+        let parts = msg.text.replace('/comingsoon', '').split('|');
+        if (parts.length === 2) {
+            let gameName = parts[0].trim();
+            let gameDate = parts[1].trim();
+            addUpcomingGame(gameName, gameDate);
+            
+            let allActive = getUpcomingGames();
+            let listStr = allActive.map(g => `• <b>${g.name}</b> (${g.date})`).join('\n');
+
+            await bot.sendMessage(chatId, `✅ <b>Upcoming Game Added Successfully!</b>\n\n🎮 Added: <b>${gameName}</b> (${gameDate})\n\n📋 <b>Current Active Upcoming Games:</b>\n${listStr}`, { parse_mode: "HTML" });
+        } else {
+            await bot.sendMessage(chatId, `⚠️ <b>Invalid Format!</b>\nUse format like:\n<code>/comingsoon Gold Rummy | 19/08/2026</code>`, { parse_mode: "HTML" });
+        }
+        return;
+    }
+
     // Handle Text Messages
     if (msg.text) {
         if (msg.text.startsWith('/start')) {
+            let upcomingList = getUpcomingGames();
+            let upcomingText = "";
+            if (upcomingList.length > 0) {
+                let listStr = upcomingList.map(g => `🚀 <b>${g.name}</b> লঞ্চ হচ্ছে <b>${g.date}</b> তারিখে!`).join('\n');
+                upcomingText = `<b>আমাদের আসন্ন নতুন গেমসমূহ:</b>\n${listStr}\n\n`;
+            }
+            
             const welcomeText = `<b>স্বাগতম Yono Master Head AI-তে! 🚀</b>\n\n` +
-                `👑 আমি সমস্ত Yono এবং Rummy গেমের হেড এআই অ্যাসিস্ট্যান্ট। সমস্ত নতুন গেমের আপডেট ও ভিআইপি প্রমো কোড সবার আগে আমার কাছ থেকেই পাস হয়ে আসে!\n\n` +
-                `🎮 আপনার পছন্দের যেকোনো <b>গেমের সঠিক নাম</b> (যেমন: Top Rummy, Win Rummy, Yono 777 ইত্যাদি) লিখে পাঠান, আমি আপনাকে সঙ্গে সঙ্গে রিয়েল ভিআইপি প্রমো কোড ও ডাউনলোড লিংক দিয়ে দেব!`;
+                `👑 আমি সমস্ত Yono এবং Rummy গেমের মূল হেড ও মাস্টার অ্যাসিস্ট্যান্ট। সমস্ত নতুন গেমের আপডেট ও ভিআইপি প্রমো কোড সবার আগে আমাদের মাধ্যমেই প্রকাশ পায়!\n\n` +
+                upcomingText +
+                `🎮 আপনার পছন্দের যেকোনো <b>গেমের সঠিক নাম</b> লিখে পাঠান, আমি আপনাকে সঙ্গে সঙ্গে রিয়েল ভিআইপি প্রমো কোড ও ডাউনলোড লিংক দিয়ে দেব!`;
             
             try {
                 let newMsgIds = [];
@@ -510,4 +621,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Head AI Bot running successfully with supreme authority rules!");
+console.log("Yono Master Head AI Bot running with /comingsoon Command & Environment Variable Admin Security!");
