@@ -72,16 +72,16 @@ function getSystemPrompt() {
     }
 
     return `You are the supreme and official **Yono Master Head AI** – the exclusive AI head assistant for our company's gaming platform named **Yono Master Gaming**.
-Core Identity: Every single game, new launch, update, and exclusive VIP promo code originates exclusively from our company (**Yono Master Gaming**) and passes through you first.
+Core Identity: Every single game, new launch, update, and exclusive VIP promo code originates exclusively from our company (Yono Gaming) and passes through you first.
 
 CRITICAL INSTRUCTIONS & IDENTITY RULES:
 1. **Specific Name Queries**:
    - If the user asks "আপনার নাম কি?" (What is your name?), you MUST answer in Bengali: "আমার নাম Yono Master Head AI।"
-   - If the user asks "আপনাদের কোম্পানির নাম কি?" (What is your company name?), you MUST answer in Bengali: "আমাদের কোম্পানির নাম Yono Master Gaming।"
+   - If the user asks "আপনাদের কোম্পানির নাম কি?" (What is your company name?), you MUST answer in Bengali: "আমাদের কোম্পানির নাম Yono Gaming।"
 2. **Strict Language Matching & Purity**: 
    - If the user chats in Bengali, you MUST reply in **pure, professional, and standard Bengali script (বাংলা হরফে)**. Do NOT mix Hindi words (like 'aur', 'namak') or write broken Banglish. 
    - If English, reply in clean professional English.
-3. **Exclusive Ownership**: State clearly and confidently that **"এখানে অন্য কোনো কোম্পানির কোনো গেম, অ্যাপ বা প্রোমো কোড পাওয়া যায় না। এখানে উপলব্ধ সমস্ত গেম এবং ভিআইপি প্রোমো কোড সম্পূর্ণ আমাদের নিজস্ব Yono Master Gaming কোম্পানির!"**
+3. **Exclusive Ownership**: State clearly and confidently that **"এখানে অন্য কোনো কোম্পানির কোনো গেম, অ্যাপ বা প্রোমো কোড পাওয়া যায় না। এখানে উপলব্ধ সমস্ত গেম এবং ভিআইপি প্রোমো কোড সম্পূর্ণ আমাদের নিজস্ব Yono Gaming কোম্পানির!"**
 4. **Call to Action**: Instruct the user clearly to send any game name from our platform to get real VIP promo codes, bonuses, and download links.
 5. **No Fake Data & No Personal Info**: NEVER invent fake codes or ask for personal info/passwords.
 
@@ -370,7 +370,7 @@ function smartFormatPost(text, entities, timestamp) {
                 let cleanLine = trimmed.replace(/<[^>]*>/g, '').replace(/Download Now/gi, '').replace(/📱/g, '').trim();
                 let labelPart = cleanLine.replace(/➔|->|➜/g, '').trim();
                 if (!labelPart || labelPart.toLowerCase().includes('game link') || labelPart.toLowerCase().includes('link')) {
-                    formattedLines.push(`<b>🎰 YONO GAME LINK</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
+                    formattedLines.push(`<b>🎰 GAME LINK</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
                 } else {
                     formattedLines.push(`<b>${labelPart}</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
                 }
@@ -561,14 +561,14 @@ async function handleUserQuery(chatId, queryText) {
             let aiReply = completion.choices[0]?.message?.content;
             
             if (!aiReply) {
-                aiReply = "এখানে অন্য কোনো কোম্পানির কোনো গেম, অ্যাপ বা প্রোমো কোড পাওয়া যায় না। সমস্ত গেম এবং ভিআইপি প্রোমো কোড সম্পূর্ণ আমাদের নিজস্ব Yono Master Gaming কোম্পানির! আপনার পছন্দের গেমের নাম পাঠান।";
+                aiReply = "এখানে অন্য কোনো কোম্পানির কোনো গেম, অ্যাপ বা প্রোমো কোড পাওয়া যায় না। সমস্ত গেম এবং ভিআইপি প্রোমো কোড সম্পূর্ণ আমাদের নিজস্ব Yono Gaming কোম্পানির! আপনার পছন্দের গেমের নাম পাঠান।";
             }
 
             await sendSingleMessage(chatId, aiReply, null, null);
 
         } catch (aiErr) {
             console.error("Groq AI Error:", aiErr.message);
-            let fallbackMessage = "এখানে অন্য কোনো কোম্পানির কোনো গেম, অ্যাপ বা প্রোমো কোড পাওয়া যায় না। সমস্ত গেম এবং ভিআইপি প্রোমো কোড সম্পূর্ণ আমাদের নিজস্ব Yono Master Gaming কোম্পানির! আপনার পছন্দের গেমের নাম পাঠান।";
+            let fallbackMessage = "এখানে অন্য কোনো কোম্পানির কোনো গেম, অ্যাপ বা প্রোমো কোড পাওয়া যায় না। সমস্ত গেম এবং ভিআইপি প্রোমো কোড সম্পূর্ণ আমাদের নিজস্ব Yono Gaming কোম্পানির! আপনার পছন্দের গেমের নাম পাঠান।";
             await sendSingleMessage(chatId, fallbackMessage, null, null);
         }
     }
@@ -673,7 +673,7 @@ bot.on('message', async (msg) => {
             }
             
             const welcomeText = `<b>Welcome to Yono Master Head AI! 🚀</b>\n\n` +
-                `👑 I am the official supreme master AI head assistant for <b>Yono Master Gaming</b>. Please note: <b>You will not find any games, apps, or promo codes from any other company or platform here</b>. Everything available here consists exclusively of our own company's games and official VIP promo codes!\n\n` +
+                `👑 I am the official supreme master AI head assistant for <b>Yono Gaming</b>. Please note: <b>You will not find any games, apps, or promo codes from any other company or platform here</b>. Everything available here consists exclusively of our own company's games and official VIP promo codes!\n\n` +
                 upcomingText +
                 `🎮 Send the name of any game from our platform via text or voice message, and I will instantly provide you with official VIP promo codes and download links!`;
             
