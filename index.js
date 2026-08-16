@@ -2,9 +2,9 @@ import TelegramBotPkg from 'node-telegram-bot-api';
 const TelegramBot = TelegramBotPkg.default || TelegramBotPkg;
 import http from 'http';
 import fs from 'fs';
+import path from 'path';
 import cron from 'node-cron';
 import { Groq } from 'groq-sdk';
-import gTTS from 'gtts';
 import { detect } from 'langdetect';
 
 const token = process.env.BOT_TOKEN;
@@ -130,25 +130,42 @@ async function generateAndSendAudio(chatId, text) {
             detectedLang = 'en';
         }
 
+        if (!detectedLang) detectedLang = 'en';
+
         const fileName = `speech_${chatId}_${Date.now()}.mp3`;
-        const gtts = new gTTS(cleanText, detectedLang);
-        
-        gtts.save(fileName, async function (err, result) {
-            if (err) {
-                console.error("Audio generation error:", err);
-                return;
+        const filePath = path.join(process.cwd(), fileName);
+
+        const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(cleanText)}&tl=${detectedLang}&client=tw-ob`;
+
+        const response = await fetch(ttsUrl, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
             }
-            try {
-                await bot.sendAudio(chatId, fileName, {
-                    caption: "🔊 Listen to full text (Play Audio)",
-                    performer: "Yono Master AI",
-                    title: "Voice Response"
-                });
-            } catch (sendErr) {
-                console.error("Audio send error:", sendErr);
-            }
-            fs.unlink(fileName, (err) => {});
         });
+
+        if (!response.ok) {
+            throw new Error(`TTS fetch failed with status ${response.status}`);
+        }
+
+        const buffer = Buffer.from(await response.arrayBuffer());
+        fs.writeFileSync(filePath, buffer);
+
+        try {
+            await bot.sendAudio(chatId, filePath, {
+                caption: "🔊 সম্পূর্ণ লেখাটি শুনতে প্লে করুন (Play Audio)",
+                performer: "Yono Master AI",
+                title: "Voice Response"
+            });
+        } catch (sendErr) {
+            console.error("Audio send error:", sendErr);
+        }
+
+        setTimeout(() => {
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }, 10000);
+
     } catch (e) {
         console.error("Audio generation error:", e);
     }
@@ -649,4 +666,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Head AI bot running with universal language support and audio listen feature!");
+console.log("Yono Master Head AI bot running with multi-language audio support and Google Translate TTS!");
