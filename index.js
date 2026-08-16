@@ -64,7 +64,7 @@ function addUpcomingGame(name, date) {
     fs.writeFileSync(UPCOMING_FILE, JSON.stringify(list, null, 2));
 }
 
-// Dynamic System Prompt Generator (Promo Code & Game focused, Strict Bot identity, No Channels)
+// Dynamic System Prompt Generator (Realistic & Precise)
 function getSystemPrompt() {
     let upcomingList = getUpcomingGames();
     let upcomingSection = "";
@@ -72,7 +72,7 @@ function getSystemPrompt() {
     if (upcomingList.length > 0) {
         upcomingSection = "CURRENT UPCOMING GAMES & LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n');
     } else {
-        upcomingSection = "CURRENT UPCOMING GAMES SCHEDULE: All major games are live with active VIP promo codes!";
+        upcomingSection = "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled. All previous games have already launched, but all active VIP promo codes, bonuses, and download links for existing games are fully available here.";
     }
 
     return `You are the supreme and official **Yono Master Head AI** – the ultimate AI head assistant and #1 master bot for all gaming promo codes, bonuses, and new game updates!
@@ -82,10 +82,9 @@ ${upcomingSection}
 
 CRITICAL RULES & INSTRUCTIONS:
 1. **Strict Language Matching**: Reply strictly in the exact language the user uses (Bengali, English, Hindi, etc.). If they ask in Bengali, reply in natural and powerful Bengali. If Hindi, reply in Hindi. If English, reply in English.
-2. **EMPHASIZE PROMO CODES & GAMES**: Whenever users ask about new games, promo codes, or bonuses, enthusiastically tell them that you provide all active VIP promo codes, special bonus links, and new game details right here in this chat! Tell them to simply type their favorite game name or search query to get instant, verified promo codes and download links.
-3. **NO FAKE LINKS OR CODES (ABSOLUTELY CRITICAL)**: NEVER invent, generate, guess, or create fake promo codes, website URLs, or download links. If a game's promo code or link is not found in your stored database, inform them with supreme confidence that you are the ultimate source and ask them to check the spelling or try another game name.
-4. **Upcoming Game Queries**: If anyone asks about new games or release dates, proudly list ALL the scheduled upcoming games and remind them that instant promo codes and updates will be available through you the moment they launch!
-5. **NEVER ASK FOR PERSONAL INFO**: Do not ask for user ID, phone number, password, or any personal details.`;
+2. **REALISTIC STATUS HANDLING**: If there are no upcoming games scheduled, state clearly and realistically: "বর্তমানে, আমার কাছে কোনো নতুন গেম শিডিউল নেই। সমস্ত পূর্ববর্তী গেমগুলো ইতিমধ্যে লঞ্চ হয়ে গেছে।" (or equivalent in user's language). BUT immediately add with absolute confidence that users can get active **VIP promo codes**, bonuses, and download links for any existing game right here by typing the game name.
+3. **NO FAKE LINKS OR CODES (ABSOLUTELY CRITICAL)**: NEVER invent, generate, guess, or create fake promo codes, website URLs, or download links. If a game's promo code or link is not found in your stored database, inform them with supreme confidence that you are the ultimate source and ask them to check the spelling.
+4. **NEVER ASK FOR PERSONAL INFO**: Do not ask for user ID, phone number, password, or any personal details.`;
 }
 
 if (!fs.existsSync(POSTS_FILE)) {
@@ -475,9 +474,9 @@ async function handleUserQuery(chatId, queryText) {
             if (!aiReply) {
                 if (upcomingList.length > 0) {
                     let listStr = upcomingList.map(g => `🎮 <b>${g.name}</b> - লঞ্চ তারিখ: <b>${g.date}</b>`).join('\n');
-                    aiReply = `👑 <b>Yono Master Head AI</b> অ্যাসিস্ট্যান্ট হিসেবে জানাচ্ছি যে আমাদের নতুন গেম এবং সেগুলির এক্সক্লুসিভ ভিআইপি প্রমো কোড পেতে যেকোনো গেমের সঠিক নাম লিখে পাঠান!\n\n${listStr}\n\n💡 <i>সবার আগে সমস্ত আপডেট ও প্রমো কোড পেতে আমাদের সাথেই থাকুন!</i>`;
+                    aiReply = `👑 <b>Yono Master Head AI</b> অ্যাসিস্ট্যান্ট হিসেবে জানাচ্ছি যে আমাদের নতুন গেম এবং সেগুলির এক্সক্লুসিভ ভিআইপি প্রমো কোড পেতে যেকোনো গেমের সঠিক নাম লিখে পাঠান!\n\n${listStr}`;
                 } else {
-                    aiReply = `👑 <b>Yono Master Head AI</b> হলো সমস্ত গেমের প্রধান হেড অ্যাসিস্ট্যান্ট বট! এখানে আপনি যেকোনো গেমের আসল নাম লিখে পাঠালেই সঙ্গে সঙ্গে রিয়েল ভিআইপি প্রমো কোড এবং ডাউনলোড লিংক পেয়ে যাবেন। আপনার পছন্দের গেমের নাম লিখে পাঠান!`;
+                    aiReply = `নতুন গেমের তথ্য জানতে আপনাকে ধন্যবাদ! আমি সর্বশেষ তথ্য দিচ্ছি। বর্তমানে, আমার কাছে <b>কোনো নতুন গেম শিডিউল নেই</b>। সমস্ত পূর্ববর্তী গেমগুলো ইতিমধ্যে লঞ্চ হয়ে গেছে।\n\n👑 তবে আমি <b>Yono Master Head AI</b> হিসেবে আপনাকে নিশ্চিত করতে চাই যে, যেকোনো বিদ্যমান বা পুরনো গেমের আসল <b>ভিআইপি প্রমো কোড, বোনাস এবং ডাউনলোড লিংক</b> পেতে আপনি আমার সাথেই যোগাযোগ রাখতে পারেন। আপনার পছন্দের গেমের সঠিক নাম লিখে পাঠান, আমি আপনাকে সঙ্গে সঙ্গে কোড ও লিংক দিয়ে দেব!`;
                 }
             }
 
@@ -489,9 +488,9 @@ async function handleUserQuery(chatId, queryText) {
             let fallbackMessage = "";
             if (upcomingList.length > 0) {
                 let listStr = upcomingList.map(g => `🎮 <b>${g.name}</b> - ${g.date}`).join('\n');
-                fallbackMessage = `❌ <b>গেমটি বা প্রমো কোড এই মুহূর্তে সরাসরি মেলেনি!</b>\n\n👑 আমি হলাম আপনার অফিশিয়াল হেড অ্যাসিস্ট্যান্ট বট <b>Yono Master Head AI</b>! যেকোনো গেমের সঠিক নাম লিখে পাঠালেই আমি আপনাকে রিয়েল ভিআইপি প্রমো কোড ও লিংক দেব। আমাদের আসন্ন গেমগুলো:\n\n${listStr}\n\n💡 <i>সঠিক গেমের নাম লিখে পাঠান!</i>`;
+                fallbackMessage = `❌ <b>গেমটি বা প্রমো কোড এই মুহূর্তে সরাসরি মেলেনি!</b>\n\n👑 আমি হলাম আপনার অফিশিয়াল হেড অ্যাসিস্ট্যান্ট বট <b>Yono Master Head AI</b>! যেকোনো গেমের সঠিক নাম লিখে পাঠালেই আমি আপনাকে রিয়েল ভিআইপি প্রমো কোড ও লিংক দেব। আমাদের আসন্ন গেমগুলো:\n\n${listStr}`;
             } else {
-                fallbackMessage = `❌ <b>গেমটি বা প্রমো কোড পাওয়া যায়নি!</b>\n\n👑 মনে রাখবেন, সমস্ত গেমের আসল ভিআইপি প্রমো কোড ও হেড অ্যাসিস্ট্যান্ট হলো এই অফিশিয়াল বট <b>Yono Master Head AI</b>! আপনার পছন্দের গেমের সঠিক নাম লিখে পাঠান, আমি আপনাকে কোড ও লিংক দেব।`;
+                fallbackMessage = `নতুন গেমের তথ্য জানতে আপনাকে ধন্যবাদ! বর্তমানে, আমার কাছে <b>কোনো নতুন গেম শিডিউল নেই</b>। সমস্ত পূর্ববর্তী গেমগুলো ইতিমধ্যে লঞ্চ হয়ে গেছে।\n\n👑 তবে মনে রাখবেন, সমস্ত গেমের আসল <b>ভিআইপি প্রমো কোড</b> ও হেড অ্যাসিস্ট্যান্ট হলো এই অফিশিয়াল বট <b>Yono Master Head AI</b>! আপনার পছন্দের যেকোনো গেমের সঠিক নাম লিখে পাঠান, আমি আপনাকে কোড ও লিংক দেব।`;
             }
             await sendSingleMessage(chatId, fallbackMessage, null, null);
         }
@@ -621,4 +620,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Head AI bot running with promo code focus, strict bot identity and multi-language support!");
+console.log("Yono Master Head AI bot running with exact requested layout, promo codes, strict bot identity and multi-language support!");
