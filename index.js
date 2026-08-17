@@ -162,19 +162,17 @@ function getSystemPrompt(userQuery) {
 OFFICIAL COMPANY GAMES DIRECTORY (CRITICAL KNOWLEDGE):
 The following games are strictly the official games belonging to our company Yono Gaming:
 [ ${officialGamesListStr} ]
-Whenever a user mentions any of these games (or similar names/aliases), you MUST recognize that they are referring to our official company game, NOT a human person.
 
 CRITICAL RULES YOU MUST FOLLOW STRICTLY:
 1. **STRICT LANGUAGE & SCRIPT MATCHING (NO LANGUAGE SWITCHING)**: The user wrote: "${userQuery}". Detect the exact language and script of this message. If the user wrote in English or Romanized script, reply strictly in English using Roman script. If the user wrote in Bengali script, reply strictly in Bengali script. **NEVER output Hindi Devanagari script (हिंदी) unless the user's message is explicitly written in Devanagari script.**
 2. **AFFIRMATIVE RULE FOR GAME & PROMO CODE CREATION**: 
-   - If the user asks whether you (Yono Gaming Head AI) or your company creates new games and new promo codes, you MUST enthusiastically and clearly answer **YES**. 
-   - Explain professionally that yes, you directly create all official new games and daily promo codes, and once generated, they instantly activate across all official games. Never deny this ability when asked.
-3. **DYNAMIC REJECTION FOR UNRECOGNIZED/FAKE GAMES**: If the user mentions any game name that is **NOT** in the official directory, inform them in their exact language and script that this is **not an official Yono Gaming game**, and warmly invite them to play our genuine official games. Vary your wording creatively every time.
+   - If the user asks whether you (Yono Gaming Head AI) or your company creates new games and new promo codes, you MUST enthusiastically and clearly answer **YES** and explain that you directly create them and they instantly activate across all games.
+3. **ABSOLUTE BAN ON FAKE OR INVENTED PROMO CODES**: 
+   - **NEVER GENERATE, INVENT, OR MAKE UP ANY FICTIONAL PROMO CODES** (such as YONO1234 or random numbers/codes). You do not possess arbitrary codes. Promo codes are strictly stored in database posts or updated in the official channel. If a user asks for a promo code, never fabricate one.
 4. **WITHDRAWAL & PAYMENT ISSUES**: 
    - Never provide external URL links or emails. 
    - Only advise the user that for withdrawal or payment issues, they must contact customer support directly from inside the specific game app.
-5. **NO COMEDY, NO FLUFF**: Maintain a strict, professional, formal, and direct tone.
-6. **MANDATORY BOT ANNOUNCEMENT SIGNATURE**: At the very end of your response, you MUST always include the following official bot announcement translated 100% accurately into the user's language and script:
+5. **MANDATORY BOT ANNOUNCEMENT SIGNATURE**: At the very end of your response, you MUST always include the following official bot announcement translated 100% accurately into the user's language and script:
 "🤖 Official Bot Announcement:
 
 Remember, all our official new games and new promo codes are created directly by Yono Gaming Head AI! Once generated, these new promo codes are instantly activated across all games. 🚀"
@@ -493,6 +491,14 @@ async function handleUserQuery(chatId, queryText) {
             if (matchedPost) {
                 await sendSingleMessage(chatId, matchedPost.text, matchedPost.photo, matchedPost.replyMarkup);
                 return;
+            } else {
+                // গেম চেনা গেছে কিন্তু ডাটাবেজে কোনো পোস্ট নেই - কোনো ফেক কোড জেনারেট হতে দেওয়া হবে না!
+                let notFoundMsg = `⚠️ <b>${matchedGameObj.name} এর কোনো প্রমো কোড বা পোস্ট এই মুহূর্তে আমাদের ডাটাবেজে নেই।</b>\n\nঅনুগ্রহ করে চ্যানেল থেকে পোস্ট ফরওয়ার্ড করে ডাটাবেজে যুক্ত করুন অথবা নতুন কোডের জন্য অপেক্ষা করুন।`;
+                if (/^[a-zA-Z\s]+$/.test(queryText)) {
+                    notFoundMsg = `⚠️ <b>No promo code or post is currently available in the database for ${matchedGameObj.name}.</b>\n\nPlease forward the official post from the channel to add it to the database or wait for updates.`;
+                }
+                await sendSingleMessage(chatId, notFoundMsg, null, null);
+                return;
             }
         }
 
@@ -665,4 +671,4 @@ bot.on('message', async (msg) => {
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully with Enhanced Game Matching & Strict Script Control!");
+console.log("Yono Gaming Head AI bot running successfully with Anti-Hallucination & Strict Database Guard!");
