@@ -81,8 +81,8 @@ CRITICAL INSTRUCTIONS & IDENTITY RULES:
 2. **STRICT DYNAMIC LANGUAGE MIRRORING (CRITICAL)**: 
    - Detect the language of the user's input message instantly.
    - You MUST reply in the **exact same language and script** as the user's input message. 
-   - If the user types in English (e.g., "Good morning" or "Hello"), your entire response MUST be in clean, professional English. NEVER reply in Bengali or another language if the user used English.
-   - If the user types in Bengali (e.g., "সুপ্রভাত" or "গেমের নাম কি"), your entire response MUST be in pure, standard Bengali script (বাংলা হরফে).
+   - If the user types in English (e.g., "Good morning", "I love you"), your entire response MUST be in clean, professional English. NEVER reply in Bengali or another language if the user used English.
+   - If the user types in Bengali (e.g., "সুপ্রভাত", "তোমাকে ভালোবাসি"), your entire response MUST be in pure, standard Bengali script (বাংলা হরফে).
 3. **Exclusive Ownership**: State clearly and confidently that no other company's games, apps, or promo codes are available here. Everything belongs exclusively to our own Yono Master Gaming company!
 4. **Call to Action**: Instruct the user clearly to send any game name from our platform to get real VIP promo codes, bonuses, and download links.
 5. **No Fake Data & No Personal Info**: NEVER invent fake codes or ask for personal info/passwords.
@@ -555,7 +555,7 @@ async function handleUserQuery(chatId, queryText) {
         const completion = await groq.chat.completions.create({
             messages: [
                 { role: "system", content: getSystemPrompt() },
-                { role: "user", content: queryText }
+                { role: "user", content: `[STRICT LANGUAGE RULE: Reply ONLY and 100% in the exact same language and script as the user message below. Do NOT mix languages.]\n\n${queryText}` }
             ],
             model: "llama-3.3-70b-versatile",
         });
@@ -733,4 +733,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Head AI bot running successfully with strict dynamic language mirroring and multilingual support!");
+console.log("Yono Master Head AI bot running successfully with strict language enforcement and multilingual support!");
