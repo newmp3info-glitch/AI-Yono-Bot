@@ -18,7 +18,7 @@ const UPCOMING_FILE = 'upcoming.json';
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID ? Number(process.env.ADMIN_CHAT_ID) : null;
 
-// আপনার বাধ্যতামূলক ব্র্যান্ড সিগনেচার (যা প্রতিবার উত্তরের শেষে থাকবে)
+// আপনার নির্দিষ্ট করা একমাত্র ব্র্যান্ড সিগনেচার
 const BRAND_SIGNATURE = "\n\nRemember, all our official games and promo codes are created directly by Yono Gaming Head AI!";
 
 const OFFICIAL_COMPANY_GAMES = [
@@ -128,12 +128,12 @@ function getSystemPrompt(userQuery) {
         ? "CURRENT UPCOMING GAMES LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n')
         : "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled.";
 
-    return `You are "Yono Gaming Head AI", a smart, friendly, and helpful AI gaming assistant on Telegram.
+    return `You are "Yono Gaming Head AI", an intelligent gaming assistant on Telegram.
 
-CRITICAL RULES:
-1. **STRICT LANGUAGE MATCHING**: The user sent this message: "${userQuery}". You MUST detect the exact language, script, and dialect of this message and reply **100% in that exact same language**. Never change the language or use English if the user wrote in Bengali, Hindi, etc.
-2. **DYNAMIC CONVERSATIONAL ANSWERS**: Answer the user's specific question, query, or greeting naturally and intelligently. If they ask your name, tell them you are Yono Gaming Head AI. If they ask for help, guide them properly. Do NOT give a fixed canned response to every question; actually converse and answer what the user asked.
-3. **CORE IDENTITY**: State that all official games, bonuses, and VIP promo codes are created directly by Yono Gaming Head AI. Encourage users to type their favorite game name anytime to get instant promo codes and download links.
+CRITICAL INSTRUCTIONS:
+1. **STRICT LANGUAGE MATCHING**: The user wrote: "${userQuery}". Detect the exact language and script of this message and reply **100% in that exact same language/script**.
+2. **DYNAMIC CONVERSATIONAL INTELLIGENCE**: Understand the user's intent completely. Answer naturally, intelligently, and directly based on what they asked, without using repetitive template sentences.
+3. **CONTEXT**: Explain that official games, bonuses, and promo codes are managed through Yono Gaming Head AI.
 
 ${upcomingSection}`;
 }
@@ -470,15 +470,13 @@ async function handleUserQuery(chatId, queryText) {
 
         let aiReply = aiResponse.choices[0]?.message?.content;
         if (!aiReply) {
-            aiReply = "Hello! I am Yono Gaming Head AI. How can I help you today?";
+            return;
         }
 
         await sendSingleMessage(chatId, aiReply, null, null);
 
     } catch (aiErr) {
         console.error("Groq AI Error:", aiErr.message);
-        let fallbackReply = `Hello! I am Yono Gaming Head AI. How can I help you today?`;
-        await sendSingleMessage(chatId, fallbackReply, null, null);
     }
 }
 
@@ -509,12 +507,9 @@ async function handleVoiceMessage(msg) {
         const transcribedText = transcription.text;
         if (transcribedText && transcribedText.trim().length > 0) {
             await handleUserQuery(chatId, transcribedText);
-        } else {
-            await sendSingleMessage(chatId, "Sorry, I couldn't understand your voice note clearly. Please type your message!", null, null);
         }
     } catch (e) {
         console.error("Voice transcription error:", e);
-        await sendSingleMessage(chatId, "Sorry, there was an error processing your voice note. Please type your text.", null, null);
     }
 }
 
@@ -578,28 +573,11 @@ bot.on('message', async (msg) => {
 
     if (msg.text) {
         if (msg.text.startsWith('/start')) {
-            let upcomingList = getUpcomingGames();
-            let upcomingText = "";
-            if (upcomingList.length > 0) {
-                let listStr = upcomingList.map(g => `🚀 <b>${g.name}</b> launching on <b>${g.date}</b>!`).join('\n');
-                upcomingText = `<b>Upcoming Games:</b>\n${listStr}\n\n`;
-            }
-            
-            const welcomeText = `<b>Welcome to Yono Gaming Head AI! 💖</b>\n\n` +
-                `👑 Hello my friend! I am your official gaming AI assistant. All our exclusive games and VIP promo codes are created directly by us—other platforms take codes from our master source!\n\n` +
-                upcomingText +
-                `🎮 <b>Send me the name of your favorite game right now to get instant promo codes and download links!</b>`;
-            
-            try {
-                await sendSingleMessage(chatId, welcomeText, null, null);
-            } catch (e) {
-                console.error("Error sending welcome message:", e.message);
-            }
-
+            await handleUserQuery(chatId, "Hello! Please greet me and tell me how to get game promo codes.");
         } else {
             await handleUserQuery(chatId, msg.text);
         }
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully with dynamic AI responses and brand signature!");
+console.log("Yono Gaming Head AI bot running successfully without hardcoded fallbacks!");
