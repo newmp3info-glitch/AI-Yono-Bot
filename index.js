@@ -4,12 +4,11 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import cron from 'node-cron';
-import { Groq } from 'groq-sdk';
 
 const token = process.env.BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
 const TARGET_CHANNEL = '@VipYonoFreeCode';
 const POSTS_FILE = 'posts.json';
@@ -458,16 +457,25 @@ async function handleUserQuery(chatId, queryText) {
             return;
         }
 
-        const aiResponse = await groq.chat.completions.create({
-            messages: [
-                { role: "system", content: getSystemPrompt(queryText) },
-                { role: "user", content: queryText }
-            ],
-            model: "llama-3.3-70b-versatile",
-            temperature: 0.7,
+        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                model: "meta-llama/llama-3-8b-instruct:free",
+                messages: [
+                    { role: "system", content: getSystemPrompt(queryText) },
+                    { role: "user", content: queryText }
+                ],
+                temperature: 0.7
+            })
         });
 
-        let aiReply = aiResponse.choices[0]?.message?.content;
+        const data = await response.json();
+        let aiReply = data.choices?.[0]?.message?.content;
+
         if (aiReply) {
             await sendSingleMessage(chatId, aiReply, null, null);
         } else {
@@ -475,44 +483,8 @@ async function handleUserQuery(chatId, queryText) {
         }
 
     } catch (aiErr) {
-        console.error("Groq AI Error:", aiErr.message);
+        console.error("OpenRouter AI Error:", aiErr.message);
         await sendSingleMessage(chatId, "Welcome to Yono Gaming Head AI! Please type your favorite game name to get instant promo codes and download links exclusively from us!", null, null);
-    }
-}
-
-async function handleVoiceMessage(msg) {
-    const chatId = msg.chat.id;
-    try {
-        await bot.sendChatAction(chatId, 'typing');
-        const fileId = msg.voice ? msg.voice.file_id : msg.audio.file_id;
-        const fileLink = await bot.getFileLink(fileId);
-        
-        const fileName = `voice_${chatId}_${Date.now()}.ogg`;
-        const filePath = path.join(process.cwd(), fileName);
-        
-        const response = await fetch(fileLink);
-        if (!response.ok) throw new Error("Failed to download voice file");
-        const buffer = Buffer.from(await response.arrayBuffer());
-        fs.writeFileSync(filePath, buffer);
-
-        const transcription = await groq.audio.transcriptions.create({
-            file: fs.createReadStream(filePath),
-            model: "whisper-large-v3",
-        });
-
-        setTimeout(() => {
-            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        }, 5000);
-
-        const transcribedText = transcription.text;
-        if (transcribedText && transcribedText.trim().length > 0) {
-            await handleUserQuery(chatId, transcribedText);
-        } else {
-            await sendSingleMessage(chatId, "Please type your favorite game name to get instant promo codes!", null, null);
-        }
-    } catch (e) {
-        console.error("Voice transcription error:", e);
-        await sendSingleMessage(chatId, "Please type your favorite game name to get instant promo codes!", null, null);
     }
 }
 
@@ -533,7 +505,7 @@ bot.on('message', async (msg) => {
     }
 
     if (msg.voice || msg.audio) {
-        await handleVoiceMessage(msg);
+        await sendSingleMessage(chatId, "Please type your favorite game name to get instant promo codes!", null, null);
         return;
     }
 
@@ -595,4 +567,4 @@ bot.on('message', async (msg) => {
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully!");
+console.log("Yono Gaming Head AI bot running successfully with OpenRouter!");
