@@ -124,7 +124,14 @@ function getSystemPrompt(userQuery) {
         ? "CURRENT UPCOMING GAMES LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n')
         : "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled.";
 
+    let officialGamesListStr = OFFICIAL_COMPANY_GAMES.map(g => g.name).join(', ');
+
     return `You are "Yono Gaming Head AI", the official and professional AI assistant for Yono Gaming company.
+
+OFFICIAL COMPANY GAMES DIRECTORY (CRITICAL KNOWLEDGE):
+The following games are strictly the official games belonging to our company Yono Gaming:
+[ ${officialGamesListStr} ]
+Whenever a user mentions any of these games (or similar names/aliases in any language like Bengali, Hindi, Urdu, or English), you MUST recognize that they are referring to our official company game, NOT a human person. Never greet a game name as if it were a person's name.
 
 CRITICAL RULES YOU MUST FOLLOW STRICTLY:
 1. **STRICT LANGUAGE & SCRIPT MATCHING**: The user wrote or spoke: "${userQuery}". Detect the exact language and script of this message and reply **100% in that exact same language and script**.
@@ -421,7 +428,6 @@ async function handleUserQuery(chatId, queryText) {
         let cleanQuery = queryText.trim().toLowerCase();
         let normCleanQuery = cleanQuery.replace(/[\s._-]/g, '');
 
-        // Smart multi-language & sentence matching
         let matchedGameObj = OFFICIAL_COMPANY_GAMES.find(g => {
             let nameLower = g.name.toLowerCase();
             let normName = nameLower.replace(/[\s._-]/g, '');
@@ -481,7 +487,7 @@ async function handleUserQuery(chatId, queryText) {
         if (aiReply) {
             await sendSingleMessage(chatId, aiReply, null, null);
         } else {
-            await sendSingleMessage, "Please type or speak your official game name to get promo codes.";
+            await sendSingleMessage(chatId, "Please type or speak your official game name to get promo codes.", null, null);
         }
 
     } catch (aiErr) {
@@ -605,4 +611,4 @@ bot.on('message', async (msg) => {
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully with Groq Whisper & Smart Sentence Matching!");
+console.log("Yono Gaming Head AI bot running successfully with Official Games Directory & Smart Matching!");
