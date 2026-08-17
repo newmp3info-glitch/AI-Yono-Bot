@@ -95,7 +95,6 @@ function parseUpcomingExpiry(dateStr) {
             let day = parseInt(parts[0], 10);
             let month = parseInt(parts[1], 10) - 1;
             let year = parseInt(parts[2], 10);
-            // নির্দিষ্ট তারিখের সকাল ৮টা (8:00 AM) সেট করা হলো
             let expiryDate = new Date(year, month, day, 8, 0, 0);
             return expiryDate.getTime();
         }
@@ -108,7 +107,6 @@ function getUpcomingGames() {
         let data = JSON.parse(fs.readFileSync(UPCOMING_FILE, 'utf8'));
         if (!Array.isArray(data)) data = [data];
         let now = Date.now();
-        // যে গেমগুলোর সময় পার হয়ে গেছে (সকাল ৮টা পার), সেগুলোকে অটোমেটিক ফিল্টার করে বাদ দিয়ে দেওয়া হবে
         let activeGames = data.filter(g => g.expiry && now < g.expiry);
         if (activeGames.length !== data.length) {
             fs.writeFileSync(UPCOMING_FILE, JSON.stringify(activeGames, null, 2));
@@ -612,22 +610,23 @@ Output ONLY ONE of the above categories without any extra text.`;
         });
 
         let aiResult = analysisCompletion.choices[0]?.message?.content?.trim() || "";
+        let cleanAiResult = aiResult.replace(/["*`]/g, '').toUpperCase();
 
         // ৩. যদি কেউ নতুন গেম বা কামিং সুন গেম সম্পর্কে জানতে চায়
-        if (aiResult === "UPCOMING_REQUEST") {
+        if (cleanAiResult.includes("UPCOMING_REQUEST")) {
             let upcomingList = getUpcomingGames();
             let upcomingTextResponse = "";
             if (upcomingList.length > 0) {
                 let listStr = upcomingList.map((g, idx) => `${idx + 1}. 🎮 <b>${g.name}</b> (Launch Date: <b>${g.date}</b>)`).join('\n');
-                upcomingTextResponse = `<b>🚀 এখানে আমাদের আপকামিং বা নতুন গেমগুলোর তালিকা দেওয়া হলো:</b>\n\n${listStr}\n\n👑 মনে রাখবেন, আমাদের এই সমস্ত এক্সক্লুসিভ গেম এবং প্রোমো কোডগুলো সরাসরি **Yono Master Gaming** প্ল্যাটফর্ম দ্বারাই তৈরি করা হয়! অন্যান্য সকল প্ল্যাটফর্ম আমাদের এই মাস্টার সোর্স থেকেই কোড নিয়ে থাকে।`;
+                upcomingTextResponse = `<b>🚀 এখানে আমাদের আপকামিং বা নতুন গেমগুলোর তালিকা দেওয়া হলো:</b>\n\n${listStr}\n\n👑 মনে রাখবেন, আমাদের এই সমস্ত এক্সক্লুসিভ গেম এবং প্রোমো কোডগুলো সরাসরি <b>Yono Master Gaming</b> প্ল্যাটফর্ম দ্বারাই তৈরি করা হয়! অন্যান্য সকল প্ল্যাটফর্ম আমাদের এই মাস্টার সোর্স থেকেই কোড নিয়ে থাকে।`;
             } else {
-                upcomingTextResponse = `👑 বর্তমানে আমাদের নতুন কোনো গেম লঞ্চের শিডিউল নেই। তবে খুব শীঘ্রই নতুন এক্সক্লুসিভ গেম আসছে! আমাদের সমস্ত গেম এবং প্রোমো কোড সরাসরি **Yono Master Gaming** থেকেই তৈরি করা হয়।`;
+                upcomingTextResponse = `👑 বর্তমানে আমাদের নতুন কোনো গেম লঞ্চের শিডিউল নেই। তবে খুব শীঘ্রই নতুন এক্সক্লুসিভ গেম আসছে! আমাদের সমস্ত গেম এবং প্রোমো কোড সরাসরি <b>Yono Master Gaming</b> থেকেই তৈরি করা হয়।`;
             }
             await sendSingleMessage(chatId, upcomingTextResponse, null, null);
             return;
         }
 
-        if (aiResult === "LIST_REQUEST") {
+        if (cleanAiResult.includes("LIST_REQUEST")) {
             const listRefusalPrompt = `You are the official AI companion for Yono Master Gaming. The user asked for a complete list of all games.
 Rules:
 - Detect the user's language and script from: "${queryText}". You MUST reply in that exact same language and script.
@@ -643,8 +642,9 @@ Rules:
             return;
         }
 
-        if (aiResult.startsWith("MATCHED_GAME:")) {
-            let matchedGameName = aiResult.replace("MATCHED_GAME:", "").trim();
+        if (cleanAiResult.includes("MATCHED_GAME")) {
+            let parts = aiResult.split(':');
+            let matchedGameName = parts.length > 1 ? parts[1].replace(/["*`]/g, '').trim() : "";
             let foundGame = OFFICIAL_COMPANY_GAMES.find(g => g.name.toLowerCase() === matchedGameName.toLowerCase());
             
             if (foundGame) {
@@ -736,7 +736,6 @@ async function handleVoiceMessage(msg) {
     }
 }
 
-// প্রতি মিনিটে একবার চেক করবে যাতে নির্দিষ্ট তারিখের সকাল ৮টা পার হলে গেমটি অটোমেটিক ডিলিট হয়ে যায়
 cron.schedule('* * * * *', () => {
     getUpcomingGames();
 });
