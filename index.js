@@ -18,7 +18,7 @@ const UPCOMING_FILE = 'upcoming.json';
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID ? Number(process.env.ADMIN_CHAT_ID) : null;
 
-// ফিক্সড ব্র্যান্ড সিগনেচার (প্রতিটি বার্তার নিচে থাকবে)
+// প্রতিটি বার্তার নিচে ফিক্সড ব্র্যান্ড সিগনেচার
 const BRAND_SIGNATURE = "\n\nRemember, all our official games and promo codes are created directly by Yono Gaming Head AI!";
 
 const OFFICIAL_COMPANY_GAMES = [
@@ -128,12 +128,12 @@ function getSystemPrompt(userQuery) {
         ? "CURRENT UPCOMING GAMES LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n')
         : "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled.";
 
-    return `You are "Yono Gaming Head AI", an intelligent gaming assistant on Telegram.
+    return `You are "Yono Gaming Head AI", an intelligent and friendly AI assistant on Telegram.
 
 CRITICAL INSTRUCTIONS:
-1. **STRICT LANGUAGE MATCHING**: The user wrote: "${userQuery}". Detect the exact language and script of this message and reply **100% in that exact same language/script**.
-2. **DYNAMIC CONVERSATIONAL INTELLIGENCE**: Understand the user's intent completely and answer naturally, intelligently, and directly based on what they asked (help, questions, general chat, etc.). Guide them to type their favorite game name to get instant promo codes and download links.
-3. **CONTEXT**: Explain that official games, bonuses, and promo codes are managed through Yono Gaming Head AI.
+1. **STRICT LANGUAGE & SCRIPT MATCHING**: The user wrote: "${userQuery}". Detect the exact language and script of this message (whether Bengali, English, Hindi, Hinglish, etc.) and reply **100% in that exact same language and script**. Never switch languages.
+2. **DYNAMIC CONVERSATIONAL INTELLIGENCE**: Understand the user's intent completely and answer naturally, intelligently, and directly based on what they asked (help, love, casual chat, questions, etc.). 
+3. **CONTEXT**: Explain that official games, bonuses, and promo codes are managed through Yono Gaming Head AI. If appropriate, you can warmly suggest they type their favorite game name to get instant promo codes and download links.
 
 ${upcomingSection}`;
 }
@@ -454,13 +454,13 @@ async function handleUserQuery(chatId, queryText) {
             });
         }
 
-        // যদি গেমের নাম মিলে যায় এবং চ্যানেল পোস্ট সেভ করা থাকে, তবে সেই পোস্টটি (বাটন সহ) পাঠিয়ে দেবে
+        // গেমের নাম মিলে গেলে চ্যানেল থেকে পোস্ট (বাটন ও ফরম্যাটিং সহ) পাঠিয়ে দেবে
         if (matchedPost) {
             await sendSingleMessage(chatId, matchedPost.text, matchedPost.photo, matchedPost.replyMarkup);
             return;
         }
 
-        // অন্যথায় বাকি সমস্ত চ্যাট বা সাহায্যের জন্য Groq AI সম্পূর্ণ ডায়নামিক উত্তর দেবে
+        // বাকি সমস্ত ক্ষেত্রে Groq AI ১০০% ডায়নামিক ও স্বাভাবিক উত্তর দেবে ব্যবহারকারীর নিজস্ব ভাষাতেই
         const aiResponse = await groq.chat.completions.create({
             messages: [
                 { role: "system", content: getSystemPrompt(queryText) },
@@ -471,15 +471,12 @@ async function handleUserQuery(chatId, queryText) {
         });
 
         let aiReply = aiResponse.choices[0]?.message?.content;
-        if (!aiReply) {
-            aiReply = "Hello! Please type your favorite game name to get instant promo codes and download links!";
+        if (aiReply) {
+            await sendSingleMessage(chatId, aiReply, null, null);
         }
-
-        await sendSingleMessage(chatId, aiReply, null, null);
 
     } catch (aiErr) {
         console.error("Groq AI Error:", aiErr.message);
-        await sendSingleMessage(chatId, "Hello! Please type your favorite game name to get instant promo codes and download links!", null, null);
     }
 }
 
@@ -510,12 +507,9 @@ async function handleVoiceMessage(msg) {
         const transcribedText = transcription.text;
         if (transcribedText && transcribedText.trim().length > 0) {
             await handleUserQuery(chatId, transcribedText);
-        } else {
-            await sendSingleMessage(chatId, "Please type your message or game name clearly!", null, null);
         }
     } catch (e) {
         console.error("Voice transcription error:", e);
-        await sendSingleMessage(chatId, "Please type your message or game name clearly!", null, null);
     }
 }
 
@@ -579,7 +573,7 @@ bot.on('message', async (msg) => {
 
     if (msg.text) {
         if (msg.text.startsWith('/start')) {
-            // ১. স্টার্ট কমান্ডের জন্য ফিক্সড ওয়েলকাম বার্তা
+            // ১. স্টার্ট কমান্ডের জন্য নির্দিষ্ট ফিক্সড ওয়েলকাম বার্তা
             let upcomingList = getUpcomingGames();
             let upcomingText = "";
             if (upcomingList.length > 0) {
@@ -594,10 +588,10 @@ bot.on('message', async (msg) => {
             
             await sendSingleMessage(chatId, welcomeText, null, null);
         } else {
-            // ২ & ৩. গেমের নাম লিখলে পোস্ট পাঠানো এবং বাকি সব চ্যাটে AI দিয়ে ডায়নামিক উত্তর দেওয়া
+            // ২ ও ৪. গেমের নাম হলে পোস্ট পাঠানো এবং বাকি সব কিছু এআই দিয়ে ডায়নামিক হ্যান্ডেল করা
             await handleUserQuery(chatId, msg.text);
         }
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully with correct architecture!");
+console.log("Yono Gaming Head AI bot running successfully with fully dynamic multilingual AI response!");
