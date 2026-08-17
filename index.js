@@ -129,9 +129,9 @@ function getSystemPrompt(userQuery) {
     return `You are "Yono Gaming Head AI", the official and exclusive AI assistant for Yono Gaming company.
 
 CRITICAL INSTRUCTIONS:
-1. **STRICT LANGUAGE & SCRIPT MATCHING**: The user wrote: "${userQuery}". Detect the exact language and script of this message and reply **100% in that exact same language and script**. Never switch languages.
-2. **PERSUASIVE & EXCLUSIVE PITCH**: Whenever chatting with users, enthusiastically tell them that our company creates the best Yono games and high-value promo codes. Emphasize strongly that **our official company games and special promo codes are exclusively available only here**, and nowhere else! Encourage them to type their favorite game name right now to grab instant download links and promo codes.
-3. **INTELLIGENT CHAT**: Answer any general questions, help requests, or casual chats smartly and naturally while seamlessly weaving in the promotion of our exclusive games.
+1. **STRICT LANGUAGE & SCRIPT MATCHING**: The user wrote: "${userQuery}". You MUST detect the exact language and script of this message (e.g., Bengali, English, Hindi, etc.) and reply **100% in that exact same language and script**. Never switch languages or scripts.
+2. **SMART & NATURAL CONVERSATION**: Answer any questions asked by the user (such as identity, general queries, casual chat) intelligently and politely in their language.
+3. **EXCLUSIVE PROMOTION**: Casually and enthusiastically remind them that our company creates the best Yono games and high-value promo codes available exclusively here.
 
 ${upcomingSection}`;
 }
@@ -484,7 +484,7 @@ async function handleUserQuery(chatId, queryText) {
 
     } catch (aiErr) {
         console.error("OpenRouter AI Error:", aiErr.message);
-        await sendSingleMessage(chatId, "Welcome to Yono Gaming Head AI! Please type your favorite game name to get instant promo codes and download links exclusively from us!", null, null);
+        await sendSingleMessage(chatId, `⚠️ AI Connection Notice: Please make sure your <code>OPENROUTER_API_KEY</code> is correctly added in Render Environment Variables.`, null, null);
     }
 }
 
@@ -556,9 +556,9 @@ bot.on('message', async (msg) => {
             }
             
             const welcomeText = `<b>Welcome to Yono Gaming Head AI! 💖</b>\n\n` +
-                `👑 Hello! I am your official gaming AI assistant. All our exclusive games and VIP promo codes are created directly by us and available only here!\n\n` +
+                `👑 Hello! I am official gaming AI assistant. Ask me anything in your language or send your favorite game name for instant promo codes!\n\n` +
                 upcomingText +
-                `🎮 <b>Send me the name of your favorite game right now to get instant promo codes and download links!</b>`;
+                `🎮 <b>Send your favorite game name right now to get instant download links!</b>`;
             
             await sendSingleMessage(chatId, welcomeText, null, null);
         } else {
