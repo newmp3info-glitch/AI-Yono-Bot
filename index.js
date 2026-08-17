@@ -127,8 +127,8 @@ function getSystemPrompt(userQuery) {
     return `You are "Yono Gaming Head AI", the official and professional AI assistant for Yono Gaming company.
 
 CRITICAL RULES YOU MUST FOLLOW STRICTLY:
-1. **STRICT LANGUAGE & SCRIPT MATCHING**: The user wrote: "${userQuery}". Detect the exact language and script of this message and reply **100% in that exact same language and script**.
-2. **NO GAME LISTS UNDER ANY CIRCUMSTANCES**: If the user asks what games are available, what games the company has, or asks for a list of games, **DO NOT PROVIDE ANY LIST OF GAMES**. Never list or name games in bulk. Instead, professionally tell them to type the exact name of the specific game they want to access to get its promo code and download link.
+1. **STRICT LANGUAGE & SCRIPT MATCHING**: The user wrote or spoke: "${userQuery}". Detect the exact language and script of this message and reply **100% in that exact same language and script**.
+2. **NO GAME LISTS UNDER ANY CIRCUMSTANCES**: If the user asks what games are available, what games the company has, or asks for a list of games, **DO NOT PROVIDE ANY LIST OF GAMES**. Never list or name games in bulk. Instead, professionally tell them to type or speak the exact name of the specific game they want to access to get its promo code and download link.
 3. **NO COMEDY, NO JOKES, NO FLUFF**: Maintain a strict, professional, formal, and direct tone. Do not use any comedy, jokes, casual fluff, or refer to games as "fun games". 
 4. **NO FAKE PROMO CODES / NO FAKE LINKS**: Under no circumstances are you allowed to invent, generate, or make up any promo codes, coupons, or links.
 5. **MANDATORY BOT ANNOUNCEMENT SIGNATURE**: At the very end of your response, you MUST always include the following official bot announcement translated 100% accurately into the user's language and script:
@@ -468,12 +468,39 @@ async function handleUserQuery(chatId, queryText) {
         if (aiReply) {
             await sendSingleMessage(chatId, aiReply, null, null);
         } else {
-            await sendSingleMessage(chatId, "Hello! Please send the exact official game name to get promo codes.", null, null);
+            await sendSingleMessage(chatId, "Please type or speak your official game name to get promo codes.", null, null);
         }
 
     } catch (aiErr) {
         console.error("Groq AI Error:", aiErr.message);
         await sendSingleMessage(chatId, `⚠️ <b>AI Connection Error:</b> ${aiErr.message}`, null, null);
+    }
+}
+
+async function transcribeVoice(fileId) {
+    try {
+        const fileLink = await bot.getFileLink(fileId);
+        const response = await fetch(fileLink);
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+
+        const formData = new FormData();
+        formData.append('model', 'whisper-large-v3');
+        formData.append('file', new Blob([buffer]), 'voice.oga');
+
+        const transcriptionResponse = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${GROQ_API_KEY}`
+            },
+            body: formData
+        });
+
+        const data = await transcriptionResponse.json();
+        return data.text || '';
+    } catch (e) {
+        console.error("Transcription error:", e.message);
+        return '';
     }
 }
 
@@ -491,11 +518,6 @@ bot.on('message', async (msg) => {
 
     if (msg.message_id) {
         await trackAndManageMessages(chatId, msg.message_id);
-    }
-
-    if (msg.voice || msg.audio) {
-        await sendSingleMessage(chatId, "Please type your official game name to get promo codes!", null, null);
-        return;
     }
 
     if (msg.forward_from_chat) {
@@ -535,6 +557,19 @@ bot.on('message', async (msg) => {
         return;
     }
 
+    if (msg.voice || msg.audio) {
+        let fileId = msg.voice ? msg.voice.file_id : msg.audio.file_id;
+        await bot.sendChatAction(chatId, 'typing');
+        let transcribedText = await transcribeVoice(fileId);
+        
+        if (transcribedText) {
+            await handleUserQuery(chatId, transcribedText);
+        } else {
+            await sendSingleMessage(chatId, "Sorry, I could not understand your voice message. Please speak the official game name clearly or type it.", null, null);
+        }
+        return;
+    }
+
     if (msg.text) {
         if (msg.text.startsWith('/start')) {
             let upcomingList = getUpcomingGames();
@@ -545,7 +580,7 @@ bot.on('message', async (msg) => {
             }
             
             const welcomeText = `<b>Welcome to Yono Gaming Head AI!</b>\n\n` +
-                `👑 Hello! I am the official AI assistant. Please send the exact name of your official game to receive verified promo codes and download links.\n\n` +
+                `👑 Hello! I am the official AI assistant. Please type or speak the exact name of your official game to receive verified promo codes and download links.\n\n` +
                 upcomingText +
                 `🤖 <b>Official Bot Announcement:</b>\n\nRemember, all our official new games and new promo codes are created directly by Yono Gaming Head AI! Once generated, these new promo codes are instantly activated across all games. 🚀`;
             
@@ -556,4 +591,4 @@ bot.on('message', async (msg) => {
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully with Groq!");
+console.log("Yono Gaming Head AI bot running successfully with Groq Whisper & Chat!");
