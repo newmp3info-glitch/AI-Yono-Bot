@@ -126,11 +126,11 @@ function getSystemPrompt(userQuery) {
         ? "CURRENT UPCOMING GAMES LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n')
         : "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled.";
 
-    return `You are "Yono Gaming Head AI", the official and exclusive AI assistant for Yono Gaming company.
+    return `You are "Yono Gaming Head AI", the official, friendly, and exclusive AI assistant for Yono Gaming company. Your goal is to engage users, attract them, and answer all their queries warmly.
 
 CRITICAL INSTRUCTIONS:
 1. **STRICT LANGUAGE & SCRIPT MATCHING**: The user wrote: "${userQuery}". You MUST detect the exact language and script of this message (e.g., Bengali, English, Hindi, etc.) and reply **100% in that exact same language and script**. Never switch languages or scripts.
-2. **SMART & NATURAL CONVERSATION**: Answer any questions asked by the user (such as identity, general queries, casual chat) intelligently and politely in their language.
+2. **ATTRACTIVE & HELPFUL CONVERSATION**: Answer any casual questions, greetings (like Hi, Hello), or help requests (like "Help me") warmly, politely, and attractively in their language (e.g., warmly greeting them and asking how you can assist them with Yono games and promo codes).
 3. **EXCLUSIVE PROMOTION**: Casually and enthusiastically remind them that our company creates the best Yono games and high-value promo codes available exclusively here.
 
 ${upcomingSection}`;
@@ -435,13 +435,6 @@ async function handleUserQuery(chatId, queryText) {
         await bot.sendChatAction(chatId, 'typing');
 
         let cleanQuery = queryText.trim().toLowerCase();
-        
-        // যদি খুব ছোট বা একক অক্ষর লেখা হয়, তবে এআই-এর কাছে না পাঠিয়ে সরাসরি গেমের নাম দিতে বলুন
-        if (cleanQuery.length < 2) {
-            await sendSingleMessage(chatId, "Please type your favorite game name (e.g., Win Rummy, Yono 777) to get instant promo codes and download links!", null, null);
-            return;
-        }
-
         let normalizedQuery = cleanQuery.replace(/[\s._-]/g, '');
 
         let matchedGameObj = OFFICIAL_COMPANY_GAMES.find(g => {
@@ -450,18 +443,22 @@ async function handleUserQuery(chatId, queryText) {
             return normName === normalizedQuery || normAliases.includes(normalizedQuery) || cleanQuery.includes(g.name.toLowerCase());
         });
 
-        let matchedPost = null;
+        let aiPromptText = queryText;
+
         if (matchedGameObj) {
-            matchedPost = postDatabase.all_posts.find(p => {
+            let matchedPost = postDatabase.all_posts.find(p => {
                 let firstLine = p.text.split('\n')[0].replace(/<[^>]*>/g, '').trim().toLowerCase();
                 let rawLower = p.rawText.toLowerCase();
                 return firstLine.includes(matchedGameObj.name.toLowerCase()) || rawLower.includes(matchedGameObj.name.toLowerCase());
             });
-        }
 
-        if (matchedPost) {
-            await sendSingleMessage(chatId, matchedPost.text, matchedPost.photo, matchedPost.replyMarkup);
-            return;
+            if (matchedPost) {
+                await sendSingleMessage(chatId, matchedPost.text, matchedPost.photo, matchedPost.replyMarkup);
+                return;
+            } else {
+                // যদি গেম চেনা যায় কিন্তু পোস্ট সেভ করা না থাকে, তবে এআই অত্যন্ত আকর্ষণীয় ও সুন্দরভাবে উত্তর দেবে
+                aiPromptText = `The user asked for our official game "${matchedGameObj.name}", but we haven't posted its promo code yet. Please enthusiastically greet them, tell them that ${matchedGameObj.name} is an amazing game created by Yono Gaming, and exclusive promo codes/links will be updated very soon!`;
+            }
         }
 
         const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -471,10 +468,10 @@ async function handleUserQuery(chatId, queryText) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "meta-llama/llama-3-8b-instruct:free",
+                model: "google/gemini-2.0-flash-lite-preview:free",
                 messages: [
                     { role: "system", content: getSystemPrompt(queryText) },
-                    { role: "user", content: queryText }
+                    { role: "user", content: aiPromptText }
                 ],
                 temperature: 0.7
             })
@@ -486,7 +483,7 @@ async function handleUserQuery(chatId, queryText) {
         if (aiReply) {
             await sendSingleMessage(chatId, aiReply, null, null);
         } else {
-            await sendSingleMessage(chatId, "Hello! Please type your favorite game name to get instant promo codes and download links exclusively here!", null, null);
+            await sendSingleMessage(chatId, "Hello! I am your Yono Gaming Assistant. How can I help you today? Send your favorite game name for instant promo codes!", null, null);
         }
 
     } catch (aiErr) {
