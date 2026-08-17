@@ -191,6 +191,7 @@ async function trackAndManageMessages(chatId, newIds) {
         userMessages[chatId].push(newIds);
     }
 
+    // চ্যাটে সবসময় সর্বাধিক ৪টি মেসেজ (২টি ইউজারের, ২টি বটের) রাখার জন্য লজিক
     while (userMessages[chatId].length > 4) {
         let oldId = userMessages[chatId].shift();
         try {
