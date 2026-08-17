@@ -18,7 +18,6 @@ const UPCOMING_FILE = 'upcoming.json';
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID ? Number(process.env.ADMIN_CHAT_ID) : null;
 
-// প্রতিটি বার্তার নিচে ফিক্সড ব্র্যান্ড সিগনেচার
 const BRAND_SIGNATURE = "\n\nRemember, all our official games and promo codes are created directly by Yono Gaming Head AI!";
 
 const OFFICIAL_COMPANY_GAMES = [
@@ -125,13 +124,13 @@ function addUpcomingGame(name, date) {
 function getSystemPrompt(userQuery) {
     let upcomingList = getUpcomingGames();
     let upcomingSection = upcomingList.length > 0 
-        ? "CURRENT UPCOMING GAMES LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} \vert{} Launch Date:${g.date}`).join('\n')
+        ? "CURRENT UPCOMING GAMES LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n')
         : "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled.";
 
     return `You are "Yono Gaming Head AI", the official and exclusive AI assistant for Yono Gaming company.
 
 CRITICAL INSTRUCTIONS:
-1. **STRICT LANGUAGE & SCRIPT MATCHING**: The user wrote: "${userQuery}". Detect the exact language and script of this message (Bengali, English, Hindi, Hinglish, etc.) and reply **100% in that exact same language and script**. Never switch languages.
+1. **STRICT LANGUAGE & SCRIPT MATCHING**: The user wrote: "${userQuery}". Detect the exact language and script of this message and reply **100% in that exact same language and script**. Never switch languages.
 2. **PERSUASIVE & EXCLUSIVE PITCH**: Whenever chatting with users, enthusiastically tell them that our company creates the best Yono games and high-value promo codes. Emphasize strongly that **our official company games and special promo codes are exclusively available only here**, and nowhere else! Encourage them to type their favorite game name right now to grab instant download links and promo codes.
 3. **INTELLIGENT CHAT**: Answer any general questions, help requests, or casual chats smartly and naturally while seamlessly weaving in the promotion of our exclusive games.
 
@@ -453,3 +452,147 @@ async function handleUserQuery(chatId, queryText) {
                 return firstLine.includes(matchedGameObj.name.toLowerCase()) || rawLower.includes(matchedGameObj.name.toLowerCase());
             });
         }
+
+        if (matchedPost) {
+            await sendSingleMessage(chatId, matchedPost.text, matchedPost.photo, matchedPost.replyMarkup);
+            return;
+        }
+
+        const aiResponse = await groq.chat.completions.create({
+            messages: [
+                { role: "system", content: getSystemPrompt(queryText) },
+                { role: "user", content: queryText }
+            ],
+            model: "llama-3.1-8b-instant",
+            temperature: 0.7,
+        });
+
+        let aiReply = aiResponse.choices[0]?.message?.content;
+        if (aiReply) {
+            await sendSingleMessage(chatId, aiReply, null, null);
+        } else {
+            await sendSingleMessage(chatId, "Hello! Please type your favorite game name to get instant promo codes and download links exclusively here!", null, null);
+        }
+
+    } catch (aiErr) {
+        console.error("Groq AI Error:", aiErr.message);
+        await sendSingleMessage(chatId, "Welcome to Yono Gaming Head AI! Please type your favorite game name to get instant promo codes and download links exclusively from us!", null, null);
+    }
+}
+
+async function handleVoiceMessage(msg) {
+    const chatId = msg.chat.id;
+    try {
+        await bot.sendChatAction(chatId, 'typing');
+        const fileId = msg.voice ? msg.voice.file_id : msg.audio.file_id;
+        const fileLink = await bot.getFileLink(fileId);
+        
+        const fileName = `voice_${chatId}_${Date.now()}.ogg`;
+        const filePath = path.join(process.cwd(), fileName);
+        
+        const response = await fetch(fileLink);
+        if (!response.ok) throw new Error("Failed to download voice file");
+        const buffer = Buffer.from(await response.arrayBuffer());
+        fs.writeFileSync(filePath, buffer);
+
+        const transcription = await groq.audio.transcriptions.create({
+            file: fs.createReadStream(filePath),
+            model: "whisper-large-v3",
+        });
+
+        setTimeout(() => {
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }, 5000);
+
+        const transcribedText = transcription.text;
+        if (transcribedText && transcribedText.trim().length > 0) {
+            await handleUserQuery(chatId, transcribedText);
+        } else {
+            await sendSingleMessage(chatId, "Please type your favorite game name to get instant promo codes!", null, null);
+        }
+    } catch (e) {
+        console.error("Voice transcription error:", e);
+        await sendSingleMessage(chatId, "Please type your favorite game name to get instant promo codes!", null, null);
+    }
+}
+
+cron.schedule('* * * * *', () => {
+    getUpcomingGames();
+});
+
+bot.on('message', async (msg) => {
+    const chatId = msg.chat.id;
+
+    if (!botUsers.includes(chatId) && chatId) {
+        botUsers.push(chatId);
+        saveUsers();
+    }
+
+    if (msg.message_id) {
+        await trackAndManageMessages(chatId, msg.message_id);
+    }
+
+    if (msg.voice || msg.audio) {
+        await handleVoiceMessage(msg);
+        return;
+    }
+
+    if (msg.forward_from_chat) {
+        const forwardedChannelUsername = msg.forward_from_chat.username ? `@${msg.forward_from_chat.username.toLowerCase()}` : '';
+
+        if (forwardedChannelUsername === TARGET_CHANNEL.toLowerCase()) {
+            let isSaved = savePostContent(msg);
+            if (isSaved) {
+                await sendSingleMessage(chatId, `✅ <b>Post successfully saved to database!</b>\n📊 Total saved posts: <b>${postDatabase.all_posts.length}</b>`, null, null);
+            } else {
+                await sendSingleMessage(chatId, `⚠️ <b>This post already exists in the database or is empty!</b>`, null, null);
+            }
+            return;
+        }
+    }
+
+    if (msg.text && (msg.text.startsWith('/comingsoon') || msg.text.startsWith('/cominsoon'))) {
+        if (!ADMIN_CHAT_ID || chatId !== ADMIN_CHAT_ID) {
+            await sendSingleMessage(chatId, `❌ <b>Access Denied!</b>\n\nYou are not authorized to use this command.`, null, null);
+            return;
+        }
+
+        let cleanText = msg.text.replace('/comingsoon', '').replace('/cominsoon', '').trim();
+        let parts = cleanText.split('|');
+        if (parts.length === 2) {
+            let gameName = parts[0].trim();
+            let gameDate = parts[1].trim();
+            addUpcomingGame(gameName, gameDate);
+            
+            let allActive = getUpcomingGames();
+            let listStr = allActive.map(g => `• <b>${g.name}</b> (Launch: ${g.date} at 8:00 AM)`).join('\n');
+
+            await sendSingleMessage(chatId, `✅ <b>Upcoming Yono Game Added Successfully!</b>\n\n🎮 Added: <b>${gameName}</b> (${gameDate})\n\n📋 <b>Current Active Upcoming Games:</b>\n${listStr}`, null, null);
+        } else {
+            await sendSingleMessage(chatId, `⚠️ <b>Invalid Format!</b>\nUse format like:\n<code>/comingsoon Gold Rummy | 19/08/2026</code>`, null, null);
+        }
+        return;
+    }
+
+    if (msg.text) {
+        if (msg.text.startsWith('/start')) {
+            let upcomingList = getUpcomingGames();
+            let upcomingText = "";
+            if (upcomingList.length > 0) {
+                let listStr = upcomingList.map(g => `🚀 <b>${g.name}</b> launching on <b>${g.date}</b>!`).join('\n');
+                upcomingText = `<b>Upcoming Games:</b>\n${listStr}\n\n`;
+            }
+            
+            const welcomeText = `<b>Welcome to Yono Gaming Head AI! 💖</b>\n\n` +
+                `👑 Hello! I am your official gaming AI assistant. All our exclusive games and VIP promo codes are created directly by us and available only here!\n\n` +
+                upcomingText +
+                `🎮 <b>Send me the name of your favorite game right now to get instant promo codes and download links!</b>`;
+            
+            await sendSingleMessage(chatId, welcomeText, null, null);
+        } else {
+            await handleUserQuery(chatId, msg.text);
+        }
+    }
+});
+
+console.log("Yono Gaming Head AI bot running successfully!");
