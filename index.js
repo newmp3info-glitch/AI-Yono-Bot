@@ -18,7 +18,7 @@ const UPCOMING_FILE = 'upcoming.json';
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID ? Number(process.env.ADMIN_CHAT_ID) : null;
 
-// আপনার নির্দিষ্ট করা একমাত্র ব্র্যান্ড সিগনেচার
+// ফিক্সড ব্র্যান্ড সিগনেচার (প্রতিটি বার্তার নিচে থাকবে)
 const BRAND_SIGNATURE = "\n\nRemember, all our official games and promo codes are created directly by Yono Gaming Head AI!";
 
 const OFFICIAL_COMPANY_GAMES = [
@@ -132,7 +132,7 @@ function getSystemPrompt(userQuery) {
 
 CRITICAL INSTRUCTIONS:
 1. **STRICT LANGUAGE MATCHING**: The user wrote: "${userQuery}". Detect the exact language and script of this message and reply **100% in that exact same language/script**.
-2. **DYNAMIC CONVERSATIONAL INTELLIGENCE**: Understand the user's intent completely. Answer naturally, intelligently, and directly based on what they asked, without using repetitive template sentences.
+2. **DYNAMIC CONVERSATIONAL INTELLIGENCE**: Understand the user's intent completely and answer naturally, intelligently, and directly based on what they asked (help, questions, general chat, etc.). Guide them to type their favorite game name to get instant promo codes and download links.
 3. **CONTEXT**: Explain that official games, bonuses, and promo codes are managed through Yono Gaming Head AI.
 
 ${upcomingSection}`;
@@ -454,11 +454,13 @@ async function handleUserQuery(chatId, queryText) {
             });
         }
 
+        // যদি গেমের নাম মিলে যায় এবং চ্যানেল পোস্ট সেভ করা থাকে, তবে সেই পোস্টটি (বাটন সহ) পাঠিয়ে দেবে
         if (matchedPost) {
             await sendSingleMessage(chatId, matchedPost.text, matchedPost.photo, matchedPost.replyMarkup);
             return;
         }
 
+        // অন্যথায় বাকি সমস্ত চ্যাট বা সাহায্যের জন্য Groq AI সম্পূর্ণ ডায়নামিক উত্তর দেবে
         const aiResponse = await groq.chat.completions.create({
             messages: [
                 { role: "system", content: getSystemPrompt(queryText) },
@@ -577,6 +579,7 @@ bot.on('message', async (msg) => {
 
     if (msg.text) {
         if (msg.text.startsWith('/start')) {
+            // ১. স্টার্ট কমান্ডের জন্য ফিক্সড ওয়েলকাম বার্তা
             let upcomingList = getUpcomingGames();
             let upcomingText = "";
             if (upcomingList.length > 0) {
@@ -591,9 +594,10 @@ bot.on('message', async (msg) => {
             
             await sendSingleMessage(chatId, welcomeText, null, null);
         } else {
+            // ২ & ৩. গেমের নাম লিখলে পোস্ট পাঠানো এবং বাকি সব চ্যাটে AI দিয়ে ডায়নামিক উত্তর দেওয়া
             await handleUserQuery(chatId, msg.text);
         }
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully with guaranteed responses!");
+console.log("Yono Gaming Head AI bot running successfully with correct architecture!");
