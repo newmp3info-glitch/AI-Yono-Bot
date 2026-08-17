@@ -17,7 +17,7 @@ const UPCOMING_FILE = 'upcoming.json';
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID ? Number(process.env.ADMIN_CHAT_ID) : null;
 
-const BRAND_SIGNATURE = "\n\nRemember, all our official games and promo codes are created directly by Yono Gaming Head AI!";
+const BRAND_SIGNATURE = "\n\n🤖 <b>Official Bot Announcement:</b>\n\nRemember, all our official new games and new promo codes are created directly by Yono Gaming Head AI! Once generated, these new promo codes are instantly activated across all games. 🚀";
 
 const OFFICIAL_COMPANY_GAMES = [
     { name: "Win Rummy", aliases: ["win rummy", "উইন রামি", "विन रम्मी"] },
@@ -193,7 +193,7 @@ async function sendSingleMessage(chatId, text, photo, replyMarkup) {
         disable_web_page_preview: true 
     };
 
-    if (text && !text.includes('Remember, all our official games and promo codes are created directly by Yono Gaming Head AI!')) {
+    if (text && !text.includes('Official Bot Announcement')) {
         text = text + BRAND_SIGNATURE;
     }
 
