@@ -122,6 +122,24 @@ function saveUsers() {
 
 let userMessages = {};
 
+async function trackAndManageMessages(chatId, newIds) {
+    if (!userMessages[chatId]) {
+        userMessages[chatId] = [];
+    }
+    if (Array.isArray(newIds)) {
+        userMessages[chatId].push(...newIds);
+    } else {
+        userMessages[chatId].push(newIds);
+    }
+
+    while (userMessages[chatId].length > 4) {
+        let oldId = userMessages[chatId].shift();
+        try {
+            await bot.deleteMessage(chatId, oldId);
+        } catch (e) {}
+    }
+}
+
 async function generateAndSendAudio(chatId, text) {
     try {
         const cleanText = text.replace(/<[^>]*>/g, '').trim(); 
@@ -177,11 +195,14 @@ async function generateAndSendAudio(chatId, text) {
         fs.writeFileSync(filePath, finalBuffer);
 
         try {
-            await bot.sendAudio(chatId, filePath, {
+            let audioMsg = await bot.sendAudio(chatId, filePath, {
                 caption: "🔊 Listen to the full audio response",
                 performer: "Yono Master AI",
                 title: "Voice Response"
             });
+            if (audioMsg) {
+                await trackAndManageMessages(chatId, audioMsg.message_id);
+            }
         } catch (sendErr) {
             console.error("Audio send error:", sendErr);
         }
@@ -226,16 +247,7 @@ async function sendSingleMessage(chatId, text, photo, replyMarkup) {
         }
 
         if (sentMsg) {
-            if (userMessages[chatId] && userMessages[chatId].length > 0) {
-                for (let oldMsgId of userMessages[chatId]) {
-                    if (oldMsgId !== sentMsg.message_id) {
-                        try {
-                            await bot.deleteMessage(chatId, oldMsgId);
-                        } catch (e) {}
-                    }
-                }
-            }
-            userMessages[chatId] = [sentMsg.message_id];
+            await trackAndManageMessages(chatId, sentMsg.message_id);
         }
     } catch (err) {
         console.error(`Error sending message to ${chatId}:`, err.message);
@@ -623,6 +635,10 @@ bot.on('message', async (msg) => {
         saveUsers();
     }
 
+    if (msg.message_id) {
+        await trackAndManageMessages(chatId, msg.message_id);
+    }
+
     if (msg.voice || msg.audio) {
         await handleVoiceMessage(msg);
         return;
@@ -679,9 +695,8 @@ bot.on('message', async (msg) => {
                 `🎮 Send the name of any game from our platform via text or voice message, and I will instantly provide you with official VIP promo codes and download links!`;
             
             try {
-                let newMsgIds = [];
                 let textMsg = await bot.sendMessage(chatId, welcomeText, { parse_mode: "HTML", disable_web_page_preview: true });
-                if (textMsg) newMsgIds.push(textMsg.message_id);
+                if (textMsg) await trackAndManageMessages(chatId, textMsg.message_id);
 
                 let cachedVoiceId = '';
                 if (fs.existsSync(VOICE_ID_FILE)) {
@@ -698,15 +713,9 @@ bot.on('message', async (msg) => {
                     }
                 }
 
-                if (voiceMsg) newMsgIds.push(voiceMsg.message_id);
-                try { await bot.deleteMessage(chatId, msg.message_id); } catch (e) {}
-
-                if (userMessages[chatId] && userMessages[chatId].length > 0) {
-                    for (let oldMsgId of userMessages[chatId]) {
-                        try { await bot.deleteMessage(chatId, oldMsgId); } catch (e) {}
-                    }
+                if (voiceMsg) {
+                    await trackAndManageMessages(chatId, voiceMsg.message_id);
                 }
-                userMessages[chatId] = newMsgIds;
 
             } catch (e) {
                 console.error("Error sending welcome message:", e.message);
@@ -736,4 +745,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Head AI bot running successfully with strict language matching!");
+console.log("Yono Master Head AI bot running successfully with language matching and 4-message automatic deletion limit!");
