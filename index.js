@@ -470,13 +470,14 @@ async function handleUserQuery(chatId, queryText) {
 
         let aiReply = aiResponse.choices[0]?.message?.content;
         if (!aiReply) {
-            return;
+            aiReply = "Hello! Please type your favorite game name to get instant promo codes and download links!";
         }
 
         await sendSingleMessage(chatId, aiReply, null, null);
 
     } catch (aiErr) {
         console.error("Groq AI Error:", aiErr.message);
+        await sendSingleMessage(chatId, "Hello! Please type your favorite game name to get instant promo codes and download links!", null, null);
     }
 }
 
@@ -507,9 +508,12 @@ async function handleVoiceMessage(msg) {
         const transcribedText = transcription.text;
         if (transcribedText && transcribedText.trim().length > 0) {
             await handleUserQuery(chatId, transcribedText);
+        } else {
+            await sendSingleMessage(chatId, "Please type your message or game name clearly!", null, null);
         }
     } catch (e) {
         console.error("Voice transcription error:", e);
+        await sendSingleMessage(chatId, "Please type your message or game name clearly!", null, null);
     }
 }
 
@@ -573,11 +577,23 @@ bot.on('message', async (msg) => {
 
     if (msg.text) {
         if (msg.text.startsWith('/start')) {
-            await handleUserQuery(chatId, "Hello! Please greet me and tell me how to get game promo codes.");
+            let upcomingList = getUpcomingGames();
+            let upcomingText = "";
+            if (upcomingList.length > 0) {
+                let listStr = upcomingList.map(g => `🚀 <b>${g.name}</b> launching on <b>${g.date}</b>!`).join('\n');
+                upcomingText = `<b>Upcoming Games:</b>\n${listStr}\n\n`;
+            }
+            
+            const welcomeText = `<b>Welcome to Yono Gaming Head AI! 💖</b>\n\n` +
+                `👑 Hello! I am your official gaming AI assistant. All our exclusive games and VIP promo codes are created directly by us.\n\n` +
+                upcomingText +
+                `🎮 <b>Send me the name of your favorite game right now to get instant promo codes and download links!</b>`;
+            
+            await sendSingleMessage(chatId, welcomeText, null, null);
         } else {
             await handleUserQuery(chatId, msg.text);
         }
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully without hardcoded fallbacks!");
+console.log("Yono Gaming Head AI bot running successfully with guaranteed responses!");
