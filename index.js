@@ -454,19 +454,18 @@ async function handleUserQuery(chatId, queryText) {
             });
         }
 
-        // ১. গেমের নাম মিললে চ্যানেল থেকে সেভ করা পোস্ট (বাটন সহ) পাঠিয়ে দেবে
         if (matchedPost) {
             await sendSingleMessage(chatId, matchedPost.text, matchedPost.photo, matchedPost.replyMarkup);
             return;
         }
 
-        // ২. Groq AI এর মাধ্যমে সঠিক ও সচল মডেল (llama-3.3-70b-specdec) ব্যবহার করে উত্তর জেনারেট করা
+        // Groq AI মডেল আপডেট করে সঠিক ও সচল মডেল (llama-3.3-70b-versatile) দেওয়া হলো
         const aiResponse = await groq.chat.completions.create({
             messages: [
                 { role: "system", content: getSystemPrompt(queryText) },
                 { role: "user", content: queryText }
             ],
-            model: "llama-3.3-70b-specdec",
+            model: "llama-3.3-70b-versatile",
             temperature: 0.7,
         });
 
