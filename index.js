@@ -419,12 +419,25 @@ async function handleUserQuery(chatId, queryText) {
         await bot.sendChatAction(chatId, 'typing');
 
         let cleanQuery = queryText.trim().toLowerCase();
-        let normalizedQuery = cleanQuery.replace(/[\s._-]/g, '');
+        let normCleanQuery = cleanQuery.replace(/[\s._-]/g, '');
 
+        // Smart multi-language & sentence matching
         let matchedGameObj = OFFICIAL_COMPANY_GAMES.find(g => {
-            let normName = g.name.toLowerCase().replace(/[\s._-]/g, '');
-            let normAliases = g.aliases.map(a => a.toLowerCase().replace(/[\s._-]/g, ''));
-            return normName === normalizedQuery || normAliases.includes(normalizedQuery) || cleanQuery.includes(g.name.toLowerCase());
+            let nameLower = g.name.toLowerCase();
+            let normName = nameLower.replace(/[\s._-]/g, '');
+
+            if (cleanQuery.includes(nameLower) || normCleanQuery.includes(normName)) {
+                return true;
+            }
+
+            for (let alias of g.aliases) {
+                let aliasLower = alias.toLowerCase();
+                let normAlias = aliasLower.replace(/[\s._-]/g, '');
+                if (cleanQuery.includes(aliasLower) || normCleanQuery.includes(normAlias)) {
+                    return true;
+                }
+            }
+            return false;
         });
 
         if (matchedGameObj) {
@@ -468,7 +481,7 @@ async function handleUserQuery(chatId, queryText) {
         if (aiReply) {
             await sendSingleMessage(chatId, aiReply, null, null);
         } else {
-            await sendSingleMessage(chatId, "Please type or speak your official game name to get promo codes.", null, null);
+            await sendSingleMessage, "Please type or speak your official game name to get promo codes.";
         }
 
     } catch (aiErr) {
@@ -486,7 +499,8 @@ async function transcribeVoice(fileId) {
 
         const formData = new FormData();
         formData.append('model', 'whisper-large-v3');
-        formData.append('file', new Blob([buffer]), 'voice.oga');
+        const blob = new Blob([buffer], { type: 'audio/ogg' });
+        formData.append('file', blob, 'voice.ogg');
 
         const transcriptionResponse = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
             method: "POST",
@@ -591,4 +605,4 @@ bot.on('message', async (msg) => {
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully with Groq Whisper & Chat!");
+console.log("Yono Gaming Head AI bot running successfully with Groq Whisper & Smart Sentence Matching!");
