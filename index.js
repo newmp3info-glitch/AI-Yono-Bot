@@ -14,6 +14,7 @@ const TARGET_CHANNEL = '@VipYonoFreeCode';
 const POSTS_FILE = 'posts.json';
 const USERS_FILE = 'users.json';
 const UPCOMING_FILE = 'upcoming.json';
+const GAMES_FILE = 'games.json';
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID ? Number(process.env.ADMIN_CHAT_ID) : null;
 
@@ -78,6 +79,35 @@ const OFFICIAL_COMPANY_GAMES = [
     { name: "SpinWinner", aliases: ["spinwinner", "স্পিন উইনার", "स्लॉट्स विनर"] }
 ];
 
+if (!fs.existsSync(GAMES_FILE)) {
+    fs.writeFileSync(GAMES_FILE, JSON.stringify([], null, 2));
+}
+
+function getDynamicGames() {
+    try {
+        let data = JSON.parse(fs.readFileSync(GAMES_FILE, 'utf8'));
+        if (!Array.isArray(data)) data = [data];
+        return data;
+    } catch (e) {
+        return [];
+    }
+}
+
+function addDynamicGame(name) {
+    let list = getDynamicGames();
+    let trimmed = name.trim();
+    if (!list.some(g => g.name.toLowerCase() === trimmed.toLowerCase())) {
+        list.push({ name: trimmed, aliases: [trimmed.toLowerCase()] });
+        fs.writeFileSync(GAMES_FILE, JSON.stringify(list, null, 2));
+    }
+}
+
+function getAllOfficialGames() {
+    let dynamic = getDynamicGames();
+    let formattedDynamic = dynamic.map(g => ({ name: g.name, aliases: g.aliases || [g.name.toLowerCase()] }));
+    return [...OFFICIAL_COMPANY_GAMES, ...formattedDynamic];
+}
+
 if (!fs.existsSync(UPCOMING_FILE)) {
     fs.writeFileSync(UPCOMING_FILE, JSON.stringify([], null, 2));
 }
@@ -124,7 +154,8 @@ function getSystemPrompt(userQuery) {
         ? "CURRENT UPCOMING GAMES LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n')
         : "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled.";
 
-    let officialGamesListStr = OFFICIAL_COMPANY_GAMES.map(g => g.name).join(', ');
+    let allOfficialGames = getAllOfficialGames();
+    let officialGamesListStr = allOfficialGames.map(g => g.name).join(', ');
 
     return `You are "Yono Gaming Head AI", the official and professional AI assistant for Yono Gaming company.
 
@@ -135,11 +166,11 @@ Whenever a user mentions any of these games (or similar names/aliases in any lan
 
 CRITICAL RULES YOU MUST FOLLOW STRICTLY:
 1. **STRICT LANGUAGE & SCRIPT MATCHING**: The user wrote or spoke: "${userQuery}". Detect the exact language and script of this message and reply **100% in that exact same language and script**.
-2. **HANDLING UPCOMING GAMES VS GAME LISTS**: 
+2. **STRICT REJECTION OF UNRECOGNIZED/FAKE GAMES**: If the user mentions any game name, title, or text intended as a game that is **NOT** present in the "OFFICIAL COMPANY GAMES DIRECTORY" above, you MUST immediately and strictly inform the user in their exact language and script that this is **not an official Yono Gaming game or title**. Never state that you will generate a promo code for an unrecognized, misspelled, or fake game name.
+3. **HANDLING UPCOMING GAMES VS GAME LISTS**: 
    - If the user specifically asks about **upcoming games, new games coming soon, or launch dates**, you MUST look at the "CURRENT UPCOMING GAMES LAUNCH SCHEDULE" below and tell the user about those upcoming games clearly.
    - If the user asks for a general list of all available games/library, **DO NOT PROVIDE ANY LIST OF GAMES**. Instead, professionally tell them to type or speak the exact name of the specific game they want.
-3. **NO COMEDY, NO JOKES, NO FLUFF**: Maintain a strict, professional, formal, and direct tone. Do not use any comedy, jokes, casual fluff, or refer to games as "fun games". 
-4. **PROMO CODE AVAILABILITY**: If the requested game promo code is not currently found in the system records, politely inform the user in their language that the promo code for this specific game will be generated and activated soon by Yono Gaming Head AI, and ask them to check back shortly or provide the exact game name. Never say you cannot create codes.
+4. **NO COMEDY, NO JOKES, NO FLUFF**: Maintain a strict, professional, formal, and direct tone. Do not use any comedy, jokes, casual fluff, or refer to games as "fun games". 
 5. **MANDATORY BOT ANNOUNCEMENT SIGNATURE**: At the very end of your response, you MUST always include the following official bot announcement translated 100% accurately into the user's language and script:
 "🤖 Official Bot Announcement:
 
@@ -431,7 +462,8 @@ async function handleUserQuery(chatId, queryText) {
         let cleanQuery = queryText.trim().toLowerCase();
         let normCleanQuery = cleanQuery.replace(/[\s._-]/g, '');
 
-        let matchedGameObj = OFFICIAL_COMPANY_GAMES.find(g => {
+        let allOfficialGames = getAllOfficialGames();
+        let matchedGameObj = allOfficialGames.find(g => {
             let nameLower = g.name.toLowerCase();
             let normName = nameLower.replace(/[\s._-]/g, '');
 
@@ -557,6 +589,23 @@ bot.on('message', async (msg) => {
         }
     }
 
+    if (msg.text && msg.text.startsWith('/addgame')) {
+        if (!ADMIN_CHAT_ID || chatId !== ADMIN_CHAT_ID) {
+            await sendSingleMessage(chatId, `❌ <b>Access Denied!</b>\n\nYou are not authorized to use this command.`, null, null);
+            return;
+        }
+
+        let cleanText = msg.text.replace('/addgame', '').trim();
+        if (cleanText) {
+            addDynamicGame(cleanText);
+            let allOfficial = getAllOfficialGames();
+            await sendSingleMessage(chatId, `✅ <b>New Official Game Added Successfully!</b>\n\n🎮 Added: <b>${cleanText}</b>\n📊 Total Official Games: <b>${allOfficial.length}</b>`, null, null);
+        } else {
+            await sendSingleMessage(chatId, `⚠️ <b>Invalid Format!</b>\nUse format like:\n<code>/addgame Gold Rummy</code>`, null, null);
+        }
+        return;
+    }
+
     if (msg.text && (msg.text.startsWith('/comingsoon') || msg.text.startsWith('/cominsoon'))) {
         if (!ADMIN_CHAT_ID || chatId !== ADMIN_CHAT_ID) {
             await sendSingleMessage(chatId, `❌ <b>Access Denied!</b>\n\nYou are not authorized to use this command.`, null, null);
@@ -614,4 +663,4 @@ bot.on('message', async (msg) => {
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully with Official Games Directory & Smart Matching!");
+console.log("Yono Gaming Head AI bot running successfully with Dynamic Official Games System & 4-Message Chat Limit!");
