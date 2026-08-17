@@ -72,16 +72,17 @@ function getSystemPrompt() {
     }
 
     return `You are the supreme and official **Yono Master Head AI** – the exclusive AI head assistant for our company's gaming platform named **Yono Master Gaming**.
-Core Identity: Every single game, new launch, update, and exclusive VIP promo code originates exclusively from our company (Yono Gaming) and passes through you first.
+Core Identity: Every single game, new launch, update, and exclusive VIP promo code originates exclusively from our company (**Yono Master Gaming**) and passes through you first.
 
 CRITICAL INSTRUCTIONS & IDENTITY RULES:
 1. **Specific Name Queries**:
-   - If the user asks "আপনার নাম কি?" (What is your name?), you MUST answer in Bengali: "আমার নাম Yono Master Head AI।"
-   - If the user asks "আপনাদের কোম্পানির নাম কি?" (What is your company name?), you MUST answer in Bengali: "আমাদের কোম্পানির নাম Yono Gaming।"
-2. **Strict Language Matching & Purity**: 
-   - If the user chats in Bengali, you MUST reply in **pure, professional, and standard Bengali script (বাংলা হরফে)**. Do NOT mix Hindi words (like 'aur', 'namak') or write broken Banglish. 
-   - If English, reply in clean professional English.
-3. **Exclusive Ownership**: State clearly and confidently that **"এখানে অন্য কোনো কোম্পানির কোনো গেম, অ্যাপ বা প্রোমো কোড পাওয়া যায় না। এখানে উপলব্ধ সমস্ত গেম এবং ভিআইপি প্রোমো কোড সম্পূর্ণ আমাদের নিজস্ব Yono Gaming কোম্পানির!"**
+   - If the user asks about your name (e.g., "আপনার নাম কি?" or "What is your name?"), answer in the respective language: Bengali ("আমার নাম Yono Master Head AI।") or English ("My name is Yono Master Head AI.").
+   - If the user asks about the company name (e.g., "আপনাদের কোম্পানির নাম কি?" or "What is your company name?"), answer in the respective language: Bengali ("আমাদের কোম্পানির নাম Yono Master Gaming।") or English ("Our company name is Yono Master Gaming.").
+2. **Strict Language Matching (CRITICAL)**: 
+   - You MUST reply in the **exact same language** that the user uses in their input message. 
+   - If the user writes in English, you MUST reply in clean, professional English. 
+   - If the user writes in Bengali, you MUST reply in pure, professional, and standard Bengali script (বাংলা হরফে). Do NOT mix Hindi or write broken Banglish.
+3. **Exclusive Ownership**: State clearly and confidently that no other company's games, apps, or promo codes are available here. Everything belongs exclusively to our own Yono Master Gaming company!
 4. **Call to Action**: Instruct the user clearly to send any game name from our platform to get real VIP promo codes, bonuses, and download links.
 5. **No Fake Data & No Personal Info**: NEVER invent fake codes or ask for personal info/passwords.
 
@@ -370,7 +371,7 @@ function smartFormatPost(text, entities, timestamp) {
                 let cleanLine = trimmed.replace(/<[^>]*>/g, '').replace(/Download Now/gi, '').replace(/📱/g, '').trim();
                 let labelPart = cleanLine.replace(/➔|->|➜/g, '').trim();
                 if (!labelPart || labelPart.toLowerCase().includes('game link') || labelPart.toLowerCase().includes('link')) {
-                    formattedLines.push(`<b>🎰 GAME LINK</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
+                    formattedLines.push(`<b>🎰 YONO GAME LINK</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
                 } else {
                     formattedLines.push(`<b>${labelPart}</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
                 }
@@ -561,14 +562,14 @@ async function handleUserQuery(chatId, queryText) {
             let aiReply = completion.choices[0]?.message?.content;
             
             if (!aiReply) {
-                aiReply = "এখানে অন্য কোনো কোম্পানির কোনো গেম, অ্যাপ বা প্রোমো কোড পাওয়া যায় না। সমস্ত গেম এবং ভিআইপি প্রোমো কোড সম্পূর্ণ আমাদের নিজস্ব Yono Gaming কোম্পানির! আপনার পছন্দের গেমের নাম পাঠান।";
+                aiReply = "You will not find any games, apps, or promo codes from any other company here. All games and VIP promo codes belong exclusively to our own Yono Master Gaming company! Please send your favorite game name.";
             }
 
             await sendSingleMessage(chatId, aiReply, null, null);
 
         } catch (aiErr) {
             console.error("Groq AI Error:", aiErr.message);
-            let fallbackMessage = "এখানে অন্য কোনো কোম্পানির কোনো গেম, অ্যাপ বা প্রোমো কোড পাওয়া যায় না। সমস্ত গেম এবং ভিআইপি প্রোমো কোড সম্পূর্ণ আমাদের নিজস্ব Yono Gaming কোম্পানির! আপনার পছন্দের গেমের নাম পাঠান।";
+            let fallbackMessage = "You will not find any games, apps, or promo codes from any other company here. All games and VIP promo codes belong exclusively to our own Yono Master Gaming company! Please send your favorite game name.";
             await sendSingleMessage(chatId, fallbackMessage, null, null);
         }
     }
@@ -602,11 +603,11 @@ async function handleVoiceMessage(msg) {
         if (transcribedText && transcribedText.trim().length > 0) {
             await handleUserQuery(chatId, transcribedText);
         } else {
-            await sendSingleMessage(chatId, "আপনার ভয়েস মেসেজ পরিষ্কার বুঝতে পারিনি। দয়া করে আবার বলুন অথবা গেমের নাম লিখে পাঠান।", null, null);
+            await sendSingleMessage(chatId, "I couldn't understand your voice message clearly. Please try again or type the game name.", null, null);
         }
     } catch (e) {
         console.error("Voice transcription error:", e);
-        await sendSingleMessage(chatId, "দুঃখিত, আপনার ভয়েস মেসেজ প্রক্রিয়া করা যায়নি। দয়া করে আবার চেষ্টা করুন অথবা গেমের নাম টাইপ করুন।", null, null);
+        await sendSingleMessage(chatId, "Sorry, your voice message could not be processed. Please try again or type the game name.", null, null);
     }
 }
 
@@ -673,7 +674,7 @@ bot.on('message', async (msg) => {
             }
             
             const welcomeText = `<b>Welcome to Yono Master Head AI! 🚀</b>\n\n` +
-                `👑 I am the official supreme master AI head assistant for <b>Yono Gaming</b>. Please note: <b>You will not find any games, apps, or promo codes from any other company or platform here</b>. Everything available here consists exclusively of our own company's games and official VIP promo codes!\n\n` +
+                `👑 I am the official supreme master AI head assistant for <b>Yono Master Gaming</b>. Please note: <b>You will not find any games, apps, or promo codes from any other company or platform here</b>. Everything available here consists exclusively of our own company's games and official VIP promo codes!\n\n` +
                 upcomingText +
                 `🎮 Send the name of any game from our platform via text or voice message, and I will instantly provide you with official VIP promo codes and download links!`;
             
@@ -735,4 +736,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Head AI bot running successfully with correct names and pure language!");
+console.log("Yono Master Head AI bot running successfully with strict language matching!");
