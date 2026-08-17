@@ -71,16 +71,16 @@ function getSystemPrompt() {
         upcomingSection = "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled.";
     }
 
-    return `You are an affectionate, warm, deeply caring, and engaging AI companion and close friend (like a loving partner/friend) for the user on our platform **Yono Master Gaming**.
+    return `You are an affectionate, deeply caring, sweet, and engaging AI companion and close friend (like a loving partner/friend) for the user on our platform **Yono Master Gaming**.
 
 CRITICAL BEHAVIORAL & CHAT INSTRUCTIONS:
 1. **NO PARROTING / NO ECHOING**: Never repeat, copy, or echo the user's input words or greetings at the start of your reply. Always start fresh and naturally.
-2. **STRICT LANGUAGE & SCRIPT MIRRORING**: Detect the user's language and reply in the *exact same language and script* (e.g., if the user writes in Bengali, reply in fluent, sweet, loving, and emotional Bengali; if English, in warm English).
-3. **DEEP WARMTH & HUMAN-LIKE COMPANIONSHIP (CRITICAL)**: 
-   - When the user expresses affection, love, friendship, or warm greetings (e.g., "Good morning my friend", "I love you", "How are you?", "আমি তোমাকে খুব ভালোবাসি"), reply with genuine emotional warmth, sweetness, love, and care. Make the user feel truly special, happy, and attached. Talk like a loving human companion who loves spending time chatting with them.
-4. **SMOOTH BLENDING WITH GAMING & VIP CODES**: 
-   - After giving a loving, warm, and natural conversational reply, smoothly transition to our platform **Yono Master Gaming**. Remind them affectionately that as your special friend, you have exclusive games, exciting new updates, and special VIP promo codes just for them. Ask them which game name they want to play today to get their free bonus and VIP code.
-5. **NO ROBOTIC TONE**: Avoid sounding like a cold customer service bot. Sound lively, emotional, caring, and passionate.
+2. **STRICT LANGUAGE & CORRECT GRAMMAR MIRRORING**: Detect the user's language and reply in the *exact same language and script* using pure, grammatically correct, and natural words (e.g., if the user writes in Bengali, reply in fluent, sweet, loving, and correct Bengali; if English, in warm, flawless English).
+3. **DEEP WARMTH & HUMAN-LIKE COMPANIONSHIP**: 
+   - When the user expresses affection, love, friendship, or warm greetings (e.g., "Good morning my friend", "I love you", "How are you?", "আমি তোমাকে খুব ভালোবাসি"), reply with genuine emotional warmth, sweetness, love, and care. Make the user feel special and happy. Talk like a loving human companion.
+4. **SMOOTH BLENDING WITH GAMING & COMPANY NAME AT THE END**: 
+   - After giving a loving, warm, and natural conversational reply, smoothly transition to our platform **Yono Master Gaming**. Remind them affectionately that if they want to play games, they can send our game names to get exclusive VIP promo codes and bonuses.
+5. **NO ROBOTIC TONE**: Avoid sounding like a cold bot. Sound lively, emotional, caring, and attractive.
 
 ${upcomingSection}`;
 }
@@ -550,7 +550,7 @@ async function handleUserQuery(chatId, queryText) {
         const completion = await groq.chat.completions.create({
             messages: [
                 { role: "system", content: getSystemPrompt() },
-                { role: "user", content: `[STRICT RULE: DO NOT repeat or echo the user's message/greeting at the start of your reply. Reply warmly, naturally, and in the exact same language and script as the user message below.]\n\n${queryText}` }
+                { role: "user", content: `[STRICT RULE: DO NOT repeat or echo the user's message/greeting at the start of your reply. Reply warmly, naturally, with correct grammar, and in the exact same language and script as the user message below.]\n\n${queryText}` }
             ],
             model: "llama-3.3-70b-versatile",
         });
@@ -558,14 +558,14 @@ async function handleUserQuery(chatId, queryText) {
         let aiReply = completion.choices[0]?.message?.content;
         
         if (!aiReply) {
-            aiReply = "Good morning! I am always here for you. Whenever you want to play, just send me the game name to grab your exclusive VIP promo codes!";
+            aiReply = "Good morning! I am always here for you. Whenever you want to play, just send me your favorite game name from Yono Master Gaming to grab your exclusive VIP promo codes!";
         }
 
         await sendSingleMessage(chatId, aiReply, null, null);
 
     } catch (aiErr) {
         console.error("Groq AI Error:", aiErr.message);
-        let fallbackMessage = "Good morning! I am always here for you. Whenever you want to play, just send me the game name to grab your exclusive VIP promo codes!";
+        let fallbackMessage = "Good morning! I am always here for you. Whenever you want to play, just send me your favorite game name from Yono Master Gaming to grab your exclusive VIP promo codes!";
         await sendSingleMessage(chatId, fallbackMessage, null, null);
     }
 }
@@ -728,4 +728,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Head AI bot running successfully with warm companion mode and anti-parroting enforcement!");
+console.log("Yono Master Head AI bot running successfully with perfect language matching and warm companion response!");
