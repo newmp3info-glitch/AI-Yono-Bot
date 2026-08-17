@@ -5,8 +5,6 @@ import fs from 'fs';
 import path from 'path';
 import cron from 'node-cron';
 import { Groq } from 'groq-sdk';
-import { detect } from 'langdetect';
-import googleTTS from 'google-tts-api';
 
 const token = process.env.BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
@@ -16,7 +14,6 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const TARGET_CHANNEL = '@VipYonoFreeCode';
 const POSTS_FILE = 'posts.json';
 const USERS_FILE = 'users.json';
-const VOICE_ID_FILE = 'voice_id.txt';
 const UPCOMING_FILE = 'upcoming.json';
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID ? Number(process.env.ADMIN_CHAT_ID) : null;
@@ -200,84 +197,6 @@ async function trackAndManageMessages(chatId, newIds) {
     }
 }
 
-async function generateAndSendAudio(chatId, text) {
-    try {
-        const cleanText = text.replace(/<[^>]*>/g, '').trim(); 
-        
-        let detectedLang = 'en';
-        if (/[\u0980-\u09FF]/.test(cleanText)) {
-            detectedLang = 'bn'; 
-        } else if (/[\u0900-\u097F]/.test(cleanText)) {
-            detectedLang = 'hi'; 
-        } else if (/[\u0600-\u06FF]/.test(cleanText)) {
-            detectedLang = 'ar'; 
-        } else {
-            try {
-                const languages = detect(cleanText);
-                if (languages && languages.length > 0) {
-                    detectedLang = languages[0].lang;
-                }
-            } catch (e) {
-                detectedLang = 'en';
-            }
-        }
-
-        if (!detectedLang) detectedLang = 'en';
-
-        const audioUrls = googleTTS.getAllAudioUrls(cleanText, {
-            lang: detectedLang,
-            slow: false,
-            host: 'https://translate.google.com',
-        });
-
-        const fileName = `speech_${chatId}_${Date.now()}.mp3`;
-        const filePath = path.join(process.cwd(), fileName);
-
-        let audioBuffers = [];
-
-        for (let item of audioUrls) {
-            const response = await fetch(item.url, {
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
-                }
-            });
-            if (response.ok) {
-                const buffer = Buffer.from(await response.arrayBuffer());
-                audioBuffers.push(buffer);
-            }
-        }
-
-        if (audioBuffers.length === 0) {
-            throw new Error("Failed to fetch any audio chunks.");
-        }
-
-        const finalBuffer = Buffer.concat(audioBuffers);
-        fs.writeFileSync(filePath, finalBuffer);
-
-        try {
-            let audioMsg = await bot.sendAudio(chatId, filePath, {
-                caption: "🔊 Listen to the audio response",
-                performer: "Yono Gaming Head AI",
-                title: "Voice Response"
-            });
-            if (audioMsg) {
-                await trackAndManageMessages(chatId, audioMsg.message_id);
-            }
-        } catch (sendErr) {
-            console.error("Audio send error:", sendErr);
-        }
-
-        setTimeout(() => {
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-            }
-        }, 15000);
-
-    } catch (e) {
-        console.error("Audio generation error:", e);
-    }
-}
-
 async function sendSingleMessage(chatId, text, photo, replyMarkup) {
     const options = { 
         parse_mode: "HTML",
@@ -288,13 +207,8 @@ async function sendSingleMessage(chatId, text, photo, replyMarkup) {
         text = text + BRAND_SIGNATURE;
     }
 
-    const listenButton = { text: "🔊 Listen Audio", callback_data: "listen_btn" };
-    
-    if (replyMarkup && replyMarkup.inline_keyboard) {
-        replyMarkup.inline_keyboard.push([listenButton]);
+    if (replyMarkup) {
         options.reply_markup = replyMarkup;
-    } else {
-        options.reply_markup = { inline_keyboard: [[listenButton]] };
     }
 
     let sentMsg = null;
@@ -317,16 +231,6 @@ async function sendSingleMessage(chatId, text, photo, replyMarkup) {
         console.error(`Error sending message to ${chatId}:`, err.message);
     }
 }
-
-bot.on('callback_query', async (query) => {
-    if (query.data === 'listen_btn') {
-        await bot.answerCallbackQuery(query.id, { text: "Generating audio..." });
-        const textToSpeak = query.message.text || query.message.caption;
-        if (textToSpeak) {
-            await generateAndSendAudio(query.message.chat.id, textToSpeak);
-        }
-    }
-});
 
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -703,42 +607,6 @@ Rules:
     }
 }
 
-async function handleVoiceMessage(msg) {
-    const chatId = msg.chat.id;
-    try {
-        await bot.sendChatAction(chatId, 'typing');
-        const fileId = msg.voice ? msg.voice.file_id : msg.audio.file_id;
-        const fileLink = await bot.getFileLink(fileId);
-        
-        const fileName = `voice_${chatId}_${Date.now()}.ogg`;
-        const filePath = path.join(process.cwd(), fileName);
-        
-        const response = await fetch(fileLink);
-        if (!response.ok) throw new Error("Failed to download voice file");
-        const buffer = Buffer.from(await response.arrayBuffer());
-        fs.writeFileSync(filePath, buffer);
-
-        const transcription = await groq.audio.transcriptions.create({
-            file: fs.createReadStream(filePath),
-            model: "whisper-large-v3",
-        });
-
-        setTimeout(() => {
-            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-        }, 5000);
-
-        const transcribedText = transcription.text;
-        if (transcribedText && transcribedText.trim().length > 0) {
-            await handleUserQuery(chatId, transcribedText);
-        } else {
-            await sendSingleMessage(chatId, "Could not understand your voice message. Please send the game name by typing.", null, null);
-        }
-    } catch (e) {
-        console.error("Voice transcription error:", e);
-        await sendSingleMessage(chatId, "Sorry, voice processing failed. Please type the game name.", null, null);
-    }
-}
-
 cron.schedule('* * * * *', () => {
     getUpcomingGames();
 });
@@ -753,11 +621,6 @@ bot.on('message', async (msg) => {
 
     if (msg.message_id) {
         await trackAndManageMessages(chatId, msg.message_id);
-    }
-
-    if (msg.voice || msg.audio) {
-        await handleVoiceMessage(msg);
-        return;
     }
 
     if (msg.forward_from_chat) {
@@ -813,26 +676,6 @@ bot.on('message', async (msg) => {
             
             try {
                 await sendSingleMessage(chatId, welcomeText, null, null);
-
-                let cachedVoiceId = ``;
-                if (fs.existsSync(VOICE_ID_FILE)) {
-                    cachedVoiceId = fs.readFileSync(VOICE_ID_FILE, 'utf8').trim();
-                }
-
-                let voiceMsg = null;
-                if (cachedVoiceId) {
-                    voiceMsg = await bot.sendVoice(chatId, cachedVoiceId);
-                } else if (fs.existsSync('./audio.mp3')) {
-                    voiceMsg = await bot.sendVoice(chatId, fs.createReadStream('./audio.mp3'));
-                    if (voiceMsg && voiceMsg.voice && voiceMsg.voice.file_id) {
-                        fs.writeFileSync(VOICE_ID_FILE, voiceMsg.voice.file_id);
-                    }
-                }
-
-                if (voiceMsg) {
-                    await trackAndManageMessages(chatId, voiceMsg.message_id);
-                }
-
             } catch (e) {
                 console.error("Error sending welcome message:", e.message);
             }
@@ -861,4 +704,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully with Global Universal Language Support and Creator Branding!");
+console.log("Yono Gaming Head AI bot running successfully without audio features and with Global Language Support & Creator Branding!");
