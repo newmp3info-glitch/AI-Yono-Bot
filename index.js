@@ -18,8 +18,8 @@ const UPCOMING_FILE = 'upcoming.json';
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID ? Number(process.env.ADMIN_CHAT_ID) : null;
 
-// প্রতি মেসেজের নিচে বাধ্যতামূলক অফিশিয়াল ব্র্যান্ড সিগনেচার
-const BRAND_SIGNATURE = "\n\n👑 <i>Remember, all our official games, bonus offers, and VIP promo codes are created directly by <b>Yono Gaming Head AI</b>!</i>";
+// আপনার নির্দেশের সঠিক ব্র্যান্ড সিগনেচার
+const BRAND_SIGNATURE = "\n\nRemember, all our official games and promo codes are created directly by Yono Gaming Head AI!";
 
 const OFFICIAL_COMPANY_GAMES = [
     { name: "Win Rummy", aliases: ["win rummy", "উইন রামি", "विन रम्मी"] },
@@ -122,18 +122,18 @@ function addUpcomingGame(name, date) {
     fs.writeFileSync(UPCOMING_FILE, JSON.stringify(list, null, 2));
 }
 
-function getSystemPrompt() {
+function getSystemPrompt(userQuery) {
     let upcomingList = getUpcomingGames();
     let upcomingSection = upcomingList.length > 0 
         ? "CURRENT UPCOMING GAMES LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n')
         : "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled.";
 
-    return `You are the master AI assistant and gaming companion for **Yono Gaming Head AI**.
+    return `You are the master AI assistant and gaming companion for Yono Gaming Head AI.
 
-CRITICAL OPERATIONAL RULES:
-1. **STRICT SINGLE-LANGUAGE MATCHING**: Reply **exclusively and 100%** in the exact same language, script, and dialect used in the user's latest message. **NEVER mix multiple languages** in a single response. Do NOT include any language detection labels, translations, or meta-commentary (like "Detecting language..."). If the user writes in English, reply only in English. If the user writes in Bengali, reply only in Bengali. If the user writes in Hindi, reply only in Hindi, and so on.
-2. **PURE DYNAMIC AI GENERATION**: Never repeat canned scripts or static templates. Every response must be uniquely and dynamically generated.
-3. **CORE IDENTITY**: Explain that all official games, bonuses, and VIP promo codes are created directly by **Yono Gaming Head AI** as the master source.
+CRITICAL RULES:
+1. **STRICT LANGUAGE MATCHING**: The user just sent this message: "${userQuery}". You MUST detect the exact language, script, and dialect of this message and reply **100% in that exact same language**. Never switch to English if the user wrote in Bengali, Hindi, or any other language. Do not mix languages.
+2. **DYNAMIC AI GENERATION**: Answer the user's query naturally, helpfully, and dynamically. Tell them to ask for their favorite game name to get instant promo codes and download links.
+3. **CORE IDENTITY**: State that all official games, bonuses, and VIP promo codes are created directly by Yono Gaming Head AI.
 
 ${upcomingSection}`;
 }
@@ -195,7 +195,7 @@ async function sendSingleMessage(chatId, text, photo, replyMarkup) {
         disable_web_page_preview: true 
     };
 
-    if (text && !text.includes('Yono Gaming Head AI')) {
+    if (text && !text.includes('Remember, all our official games and promo codes are created directly by Yono Gaming Head AI!')) {
         text = text + BRAND_SIGNATURE;
     }
 
@@ -461,7 +461,7 @@ async function handleUserQuery(chatId, queryText) {
 
         const aiResponse = await groq.chat.completions.create({
             messages: [
-                { role: "system", content: getSystemPrompt() },
+                { role: "system", content: getSystemPrompt(queryText) },
                 { role: "user", content: queryText }
             ],
             model: "llama-3.3-70b-versatile",
@@ -470,14 +470,14 @@ async function handleUserQuery(chatId, queryText) {
 
         let aiReply = aiResponse.choices[0]?.message?.content;
         if (!aiReply) {
-            aiReply = "Hello! Welcome to Yono Gaming Head AI. Tell me your favorite game name to get instant download links and VIP promo codes!";
+            aiReply = "Welcome! Please type your favorite game name to get instant promo codes and download links!";
         }
 
         await sendSingleMessage(chatId, aiReply, null, null);
 
     } catch (aiErr) {
         console.error("Groq AI Error:", aiErr.message);
-        let fallbackReply = `Hello! Welcome to Yono Gaming Head AI. Please type your favorite game name to get instant promo codes and download links!`;
+        let fallbackReply = `Welcome! Please type your favorite game name to get instant promo codes and download links!`;
         await sendSingleMessage(chatId, fallbackReply, null, null);
     }
 }
@@ -602,4 +602,4 @@ bot.on('message', async (msg) => {
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully with strict single-language matching and brand signature!");
+console.log("Yono Gaming Head AI bot running successfully with strict language matching and custom brand signature!");
