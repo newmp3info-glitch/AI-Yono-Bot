@@ -166,8 +166,9 @@ Whenever a user mentions any of these games (or similar names/aliases in any lan
 
 CRITICAL RULES YOU MUST FOLLOW STRICTLY:
 1. **STRICT LANGUAGE & SCRIPT MATCHING**: The user wrote or spoke: "${userQuery}". Detect the exact language and script of this message and reply **100% in that exact same language and script**.
-2. **STRICT REJECTION & INVITATION FOR UNRECOGNIZED/FAKE GAMES**: If the user mentions any game name, title, or text intended as a game that is **NOT** exactly present in the "OFFICIAL COMPANY GAMES DIRECTORY" above (for example, random names like "Gogo 77", "Mama Rummy", etc.), you MUST immediately and strictly inform the user in their exact language and script that this is **not an official Yono Gaming game or title**. 
-   - **MANDATORY EXTRA MESSAGE**: Immediately after stating that it is not our official game, you must warmly and professionally encourage them by adding a message inviting them to play our real, official Yono Gaming platform games (e.g., asking them if they want to play our official games, offering them to try our verified Yono Gaming titles for great winnings and bonuses).
+2. **DYNAMIC, NON-REPETITIVE REJECTION & INVITATION FOR UNRECOGNIZED/FAKE GAMES**: If the user mentions any game name, title, or text intended as a game that is **NOT** exactly present in the "OFFICIAL COMPANY GAMES DIRECTORY" above, you MUST immediately inform the user in their exact language and script that this is **not an official Yono Gaming game or title**. 
+   - **CRITICAL VARIATION MANDATE**: Do **NOT** use the same fixed sentences or robotic templates repeatedly. Every single time you reply to an unrecognized name, you must **dynamically vary, paraphrase, and completely mix up your wording, sentence structures, and synonyms** so that it sounds fresh, natural, and proves you are a smart AI rather than a static script.
+   - **MANDATORY INVITATION**: In every such response, naturally and warmly encourage the user to explore and play our genuine, verified official Yono Gaming platform games for massive winnings and bonuses.
 3. **HANDLING UPCOMING GAMES VS GAME LISTS**: 
    - If the user specifically asks about **upcoming games, new games coming soon, or launch dates**, you MUST look at the "CURRENT UPCOMING GAMES LAUNCH SCHEDULE" below and tell the user about those upcoming games clearly.
    - If the user asks for a general list of all available games/library, **DO NOT PROVIDE ANY LIST OF GAMES**. Instead, professionally tell them to type or speak the exact name of the specific game they want.
@@ -223,7 +224,6 @@ async function trackAndManageMessages(chatId, newIds) {
         userMessages[chatId].push(newIds);
     }
 
-    // চ্যাটে সবসময় সর্বাধিক ৪টি মেসেজ (২টি ইউজারের, ২টি বটের) রাখার জন্য লজিক
     while (userMessages[chatId].length > 4) {
         let oldId = userMessages[chatId].shift();
         try {
@@ -398,7 +398,7 @@ function smartFormatPost(text, entities, timestamp) {
                 }
             }
 
-            let formattedLine = trimmed.replace(/(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z0-9][-a-zA-Z0-9]*[^\s]*\.(com|win|net|top|app|vip|in|store|club|xyz|buzz|bet)[^\s]*)/gi, (match) => {
+            let formattedLine = trimmed.replace(/(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z0-9][-a-zA-Z0-9]*[^\s]*\.(com|win|net|top|app|vip|in|store|club|xyz|bet)[^\s]*)/gi, (match) => {
                 return `<code>${match.replace(/\./g, '.\u200B')}</code>`;
             });
 
@@ -507,7 +507,7 @@ async function handleUserQuery(chatId, queryText) {
                     { role: "system", content: getSystemPrompt(queryText) },
                     { role: "user", content: queryText }
                 ],
-                temperature: 0.7
+                temperature: 0.85
             })
         });
 
@@ -664,4 +664,4 @@ bot.on('message', async (msg) => {
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully with Enhanced Rejection & Invitation System!");
+console.log("Yono Gaming Head AI bot running successfully with Dynamic Non-Repetitive AI Responses!");
