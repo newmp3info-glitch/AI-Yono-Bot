@@ -124,13 +124,16 @@ function getSystemPrompt(userQuery) {
         ? "CURRENT UPCOMING GAMES LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n')
         : "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled.";
 
-    return `You are "Yono Gaming Head AI", the official, friendly, and exclusive AI assistant for Yono Gaming company. Your goal is to engage users, attract them, and answer all their queries warmly.
+    let gameNamesList = OFFICIAL_COMPANY_GAMES.map(g => g.name).join(', ');
 
-CRITICAL INSTRUCTIONS:
-1. **STRICT LANGUAGE & SCRIPT MATCHING**: The user wrote: "${userQuery}". You MUST detect the exact language and script of this message (e.g., Bengali, English, Hindi, Arabic, Spanish, etc.) and reply **100% in that exact same language and script**. Never switch languages or scripts.
-2. **ATTRACTIVE & HELPFUL CONVERSATION**: Answer any casual questions, greetings (like Hi, Hello), or help requests warmly, politely, and attractively in their language.
-3. **EXCLUSIVE PROMOTION**: Casually and enthusiastically remind them that our company creates the best Yono games and high-value promo codes available exclusively here.
-4. **MANDATORY BOT ANNOUNCEMENT SIGNATURE**: At the very end of your response, you MUST always include the following official bot announcement translated 100% accurately into the user's language and script:
+    return `You are "Yono Gaming Head AI", the official, friendly, and exclusive AI assistant for Yono Gaming company.
+
+CRITICAL RULES YOU MUST FOLLOW STRICTLY:
+1. **STRICT LANGUAGE & SCRIPT MATCHING**: The user wrote: "${userQuery}". Detect the exact language and script of this message and reply **100% in that exact same language and script**.
+2. **NO FAKE PROMO CODES / NO FAKE LINKS**: **UNDER NO CIRCUMSTANCES ARE YOU ALLOWED TO INVENT, GENERATE, OR MAKE UP ANY PROMO CODES, COUPONS, OR LINKS.** You do not have the ability to create promo codes. 
+3. **ONLY ASK FOR CORRECT GAME NAMES**: If the user sends a random word, greeting, or a game name that is not recognized, warmly welcome them, tell them about our amazing Yono games, and politely ask them to send the **exact correct name** of our official game to get real verified promo codes and download links.
+4. **OFFICIAL GAMES LIST**: Our official company games are: [${gameNamesList}].
+5. **MANDATORY BOT ANNOUNCEMENT SIGNATURE**: At the very end of your response, you MUST always include the following official bot announcement translated 100% accurately into the user's language and script:
 "🤖 Official Bot Announcement:
 
 Remember, all our official new games and new promo codes are created directly by Yono Gaming Head AI! Once generated, these new promo codes are instantly activated across all games. 🚀"
@@ -426,8 +429,6 @@ async function handleUserQuery(chatId, queryText) {
             return normName === normalizedQuery || normAliases.includes(normalizedQuery) || cleanQuery.includes(g.name.toLowerCase());
         });
 
-        let aiPromptText = queryText;
-
         if (matchedGameObj) {
             let matchedPost = postDatabase.all_posts.find(p => {
                 let firstLine = p.text.split('\n')[0].replace(/<[^>]*>/g, '').trim().toLowerCase();
@@ -438,8 +439,6 @@ async function handleUserQuery(chatId, queryText) {
             if (matchedPost) {
                 await sendSingleMessage(chatId, matchedPost.text, matchedPost.photo, matchedPost.replyMarkup);
                 return;
-            } else {
-                aiPromptText = `The user asked for our official game "${matchedGameObj.name}", but we haven't posted its promo code yet. Please enthusiastically greet them, tell them that ${matchedGameObj.name} is an amazing game created by Yono Gaming, and exclusive promo codes/links will be updated very soon!`;
             }
         }
 
@@ -453,7 +452,7 @@ async function handleUserQuery(chatId, queryText) {
                 model: "openai/gpt-oss-20b",
                 messages: [
                     { role: "system", content: getSystemPrompt(queryText) },
-                    { role: "user", content: aiPromptText }
+                    { role: "user", content: queryText }
                 ],
                 temperature: 0.7
             })
@@ -471,7 +470,7 @@ async function handleUserQuery(chatId, queryText) {
         if (aiReply) {
             await sendSingleMessage(chatId, aiReply, null, null);
         } else {
-            await sendSingleMessage(chatId, "Hello! I am your Yono Gaming Assistant. How can I help you today? Send your favorite game name for instant promo codes!", null, null);
+            await sendSingleMessage(chatId, "Hello! I am your Yono Gaming Assistant. Send your favorite official game name for instant promo codes!", null, null);
         }
 
     } catch (aiErr) {
@@ -548,9 +547,9 @@ bot.on('message', async (msg) => {
             }
             
             const welcomeText = `<b>Welcome to Yono Gaming Head AI! 💖</b>\n\n` +
-                `👑 Hello! I am official gaming AI assistant. Ask me anything in your language or send your favorite game name for instant promo codes!\n\n` +
+                `👑 Hello! I am official gaming AI assistant. Ask me anything in your language or send your favorite official game name for instant promo codes!\n\n` +
                 upcomingText +
-                `🎮 <b>Send your favorite game name right now to get instant download links!</b>\n\n` +
+                `🎮 <b>Send your favorite official game name right now to get instant download links and real promo codes!</b>\n\n` +
                 `🤖 <b>Official Bot Announcement:</b>\n\nRemember, all our official new games and new promo codes are created directly by Yono Gaming Head AI! Once generated, these new promo codes are instantly activated across all games. 🚀`;
             
             await sendSingleMessage(chatId, welcomeText, null, null);
