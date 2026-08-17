@@ -18,7 +18,7 @@ const UPCOMING_FILE = 'upcoming.json';
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID ? Number(process.env.ADMIN_CHAT_ID) : null;
 
-// আপনার নির্দেশের বাধ্যতামূলক ব্র্যান্ড সিগনেচার
+// আপনার বাধ্যতামূলক ব্র্যান্ড সিগনেচার (যা প্রতিবার উত্তরের শেষে থাকবে)
 const BRAND_SIGNATURE = "\n\nRemember, all our official games and promo codes are created directly by Yono Gaming Head AI!";
 
 const OFFICIAL_COMPANY_GAMES = [
@@ -79,7 +79,7 @@ const OFFICIAL_COMPANY_GAMES = [
     { name: "SpinGold", aliases: ["spingold", "স্পিন গোল্ড", "स्पिन गोल्ड"] },
     { name: "SpinCrush", aliases: ["spincrush", "স্পিন ক্রাশ", "स्पिन क्रश"] },
     { name: "MBM", aliases: ["mbm", "এমবিএম", "एमबीएम"] },
-    { name: "SpinWinner", aliases: ["spinwinner", "স্পিন উইনার", "स्पिन विनर"] }
+    { name: "SpinWinner", aliases: ["spinwinner", "স্পিন উইনার", "स्लॉट्स विनर"] }
 ];
 
 if (!fs.existsSync(UPCOMING_FILE)) {
@@ -128,12 +128,12 @@ function getSystemPrompt(userQuery) {
         ? "CURRENT UPCOMING GAMES LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n')
         : "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled.";
 
-    return `You are "Yono Gaming Head AI", a helpful, friendly, and intelligent master AI assistant and gaming companion on Telegram.
+    return `You are "Yono Gaming Head AI", a smart, friendly, and helpful AI gaming assistant on Telegram.
 
-CRITICAL INSTRUCTIONS:
-1. **STRICT LANGUAGE MATCHING**: The user sent this message: "${userQuery}". You MUST detect the exact language, script, and dialect of this message and reply **100% in that exact same language** (e.g., if Bengali, reply in fluent Bengali; if English, reply in English; if Hindi, reply in Hindi). Never switch languages or use English when the user speaks another language.
-2. **DYNAMIC CONVERSATIONAL REPLY**: Answer the user's specific question or query naturally, politely, and helpfully. If they ask "What is your name?", tell them your name is Yono Gaming Head AI. If they ask for help, guide them properly. Encourage them to type their favorite game name to get instant promo codes and download links.
-3. **CORE IDENTITY**: Always maintain that you are Yono Gaming Head AI, and all official games, bonuses, and VIP promo codes are created directly by Yono Gaming Head AI.
+CRITICAL RULES:
+1. **STRICT LANGUAGE MATCHING**: The user sent this message: "${userQuery}". You MUST detect the exact language, script, and dialect of this message and reply **100% in that exact same language**. Never change the language or use English if the user wrote in Bengali, Hindi, etc.
+2. **DYNAMIC CONVERSATIONAL ANSWERS**: Answer the user's specific question, query, or greeting naturally and intelligently. If they ask your name, tell them you are Yono Gaming Head AI. If they ask for help, guide them properly. Do NOT give a fixed canned response to every question; actually converse and answer what the user asked.
+3. **CORE IDENTITY**: State that all official games, bonuses, and VIP promo codes are created directly by Yono Gaming Head AI. Encourage users to type their favorite game name anytime to get instant promo codes and download links.
 
 ${upcomingSection}`;
 }
@@ -470,14 +470,14 @@ async function handleUserQuery(chatId, queryText) {
 
         let aiReply = aiResponse.choices[0]?.message?.content;
         if (!aiReply) {
-            aiReply = "Hello! I am Yono Gaming Head AI. How can I help you today? Please type your favorite game name to get instant promo codes and download links!";
+            aiReply = "Hello! I am Yono Gaming Head AI. How can I help you today?";
         }
 
         await sendSingleMessage(chatId, aiReply, null, null);
 
     } catch (aiErr) {
         console.error("Groq AI Error:", aiErr.message);
-        let fallbackReply = `Hello! I am Yono Gaming Head AI. Please type your favorite game name to get instant promo codes and download links!`;
+        let fallbackReply = `Hello! I am Yono Gaming Head AI. How can I help you today?`;
         await sendSingleMessage(chatId, fallbackReply, null, null);
     }
 }
