@@ -17,8 +17,6 @@ const UPCOMING_FILE = 'upcoming.json';
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID ? Number(process.env.ADMIN_CHAT_ID) : null;
 
-const BRAND_SIGNATURE = "\n\n🤖 <b>Official Bot Announcement:</b>\n\nRemember, all our official new games and new promo codes are created directly by Yono Gaming Head AI! Once generated, these new promo codes are instantly activated across all games. 🚀";
-
 const OFFICIAL_COMPANY_GAMES = [
     { name: "Win Rummy", aliases: ["win rummy", "উইন রামি", "विन रम्मी"] },
     { name: "Dhan Game", aliases: ["dhan game", "ধান গেম", "dhan", "धन गेम"] },
@@ -129,9 +127,13 @@ function getSystemPrompt(userQuery) {
     return `You are "Yono Gaming Head AI", the official, friendly, and exclusive AI assistant for Yono Gaming company. Your goal is to engage users, attract them, and answer all their queries warmly.
 
 CRITICAL INSTRUCTIONS:
-1. **STRICT LANGUAGE & SCRIPT MATCHING**: The user wrote: "${userQuery}". You MUST detect the exact language and script of this message (e.g., Bengali, English, Hindi, etc.) and reply **100% in that exact same language and script**. Never switch languages or scripts.
-2. **ATTRACTIVE & HELPFUL CONVERSATION**: Answer any casual questions, greetings (like Hi, Hello), or help requests (like "Help me") warmly, politely, and attractively in their language.
+1. **STRICT LANGUAGE & SCRIPT MATCHING**: The user wrote: "${userQuery}". You MUST detect the exact language and script of this message (e.g., Bengali, English, Hindi, Arabic, Spanish, etc.) and reply **100% in that exact same language and script**. Never switch languages or scripts.
+2. **ATTRACTIVE & HELPFUL CONVERSATION**: Answer any casual questions, greetings (like Hi, Hello), or help requests warmly, politely, and attractively in their language.
 3. **EXCLUSIVE PROMOTION**: Casually and enthusiastically remind them that our company creates the best Yono games and high-value promo codes available exclusively here.
+4. **MANDATORY BOT ANNOUNCEMENT SIGNATURE**: At the very end of your response, you MUST always include the following official bot announcement translated 100% accurately into the user's language and script:
+"🤖 Official Bot Announcement:
+
+Remember, all our official new games and new promo codes are created directly by Yono Gaming Head AI! Once generated, these new promo codes are instantly activated across all games. 🚀"
 
 ${upcomingSection}`;
 }
@@ -192,10 +194,6 @@ async function sendSingleMessage(chatId, text, photo, replyMarkup) {
         parse_mode: "HTML",
         disable_web_page_preview: true 
     };
-
-    if (text && !text.includes('Official Bot Announcement')) {
-        text = text + BRAND_SIGNATURE;
-    }
 
     if (replyMarkup) {
         options.reply_markup = replyMarkup;
@@ -552,7 +550,8 @@ bot.on('message', async (msg) => {
             const welcomeText = `<b>Welcome to Yono Gaming Head AI! 💖</b>\n\n` +
                 `👑 Hello! I am official gaming AI assistant. Ask me anything in your language or send your favorite game name for instant promo codes!\n\n` +
                 upcomingText +
-                `🎮 <b>Send your favorite game name right now to get instant download links!</b>`;
+                `🎮 <b>Send your favorite game name right now to get instant download links!</b>\n\n` +
+                `🤖 <b>Official Bot Announcement:</b>\n\nRemember, all our official new games and new promo codes are created directly by Yono Gaming Head AI! Once generated, these new promo codes are instantly activated across all games. 🚀`;
             
             await sendSingleMessage(chatId, welcomeText, null, null);
         } else {
