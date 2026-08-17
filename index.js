@@ -166,11 +166,12 @@ Whenever a user mentions any of these games (or similar names/aliases in any lan
 
 CRITICAL RULES YOU MUST FOLLOW STRICTLY:
 1. **STRICT LANGUAGE & SCRIPT MATCHING**: The user wrote or spoke: "${userQuery}". Detect the exact language and script of this message and reply **100% in that exact same language and script**.
-2. **STRICT REJECTION OF UNRECOGNIZED/FAKE GAMES**: If the user mentions any game name, title, or text intended as a game that is **NOT** present in the "OFFICIAL COMPANY GAMES DIRECTORY" above, you MUST immediately and strictly inform the user in their exact language and script that this is **not an official Yono Gaming game or title**. Never state that you will generate a promo code for an unrecognized, misspelled, or fake game name.
+2. **STRICT REJECTION & INVITATION FOR UNRECOGNIZED/FAKE GAMES**: If the user mentions any game name, title, or text intended as a game that is **NOT** exactly present in the "OFFICIAL COMPANY GAMES DIRECTORY" above (for example, random names like "Gogo 77", "Mama Rummy", etc.), you MUST immediately and strictly inform the user in their exact language and script that this is **not an official Yono Gaming game or title**. 
+   - **MANDATORY EXTRA MESSAGE**: Immediately after stating that it is not our official game, you must warmly and professionally encourage them by adding a message inviting them to play our real, official Yono Gaming platform games (e.g., asking them if they want to play our official games, offering them to try our verified Yono Gaming titles for great winnings and bonuses).
 3. **HANDLING UPCOMING GAMES VS GAME LISTS**: 
    - If the user specifically asks about **upcoming games, new games coming soon, or launch dates**, you MUST look at the "CURRENT UPCOMING GAMES LAUNCH SCHEDULE" below and tell the user about those upcoming games clearly.
    - If the user asks for a general list of all available games/library, **DO NOT PROVIDE ANY LIST OF GAMES**. Instead, professionally tell them to type or speak the exact name of the specific game they want.
-4. **NO COMEDY, NO JOKES, NO FLUFF**: Maintain a strict, professional, formal, and direct tone. Do not use any comedy, jokes, casual fluff, or refer to games as "fun games". 
+4. **NO COMEDY, NO JOKES, NO FLUFF**: Maintain a strict, professional, formal, and direct tone. Do not use any comedy, jokes, or casual fluff. 
 5. **MANDATORY BOT ANNOUNCEMENT SIGNATURE**: At the very end of your response, you MUST always include the following official bot announcement translated 100% accurately into the user's language and script:
 "🤖 Official Bot Announcement:
 
@@ -467,14 +468,14 @@ async function handleUserQuery(chatId, queryText) {
             let nameLower = g.name.toLowerCase();
             let normName = nameLower.replace(/[\s._-]/g, '');
 
-            if (cleanQuery.includes(nameLower) || normCleanQuery.includes(normName)) {
+            if (cleanQuery === nameLower || normCleanQuery === normName) {
                 return true;
             }
 
             for (let alias of g.aliases) {
                 let aliasLower = alias.toLowerCase();
                 let normAlias = aliasLower.replace(/[\s._-]/g, '');
-                if (cleanQuery.includes(aliasLower) || normCleanQuery.includes(normAlias)) {
+                if (cleanQuery === aliasLower || normCleanQuery === normAlias) {
                     return true;
                 }
             }
@@ -663,4 +664,4 @@ bot.on('message', async (msg) => {
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully with Dynamic Official Games System & 4-Message Chat Limit!");
+console.log("Yono Gaming Head AI bot running successfully with Enhanced Rejection & Invitation System!");
