@@ -516,13 +516,17 @@ async function handleUserQuery(chatId, queryText) {
         let matchedGameName = null;
 
         if (availableGames.length > 0) {
-            const matchPrompt = `You are an AI assistant for Yono Master Gaming. 
-            User message: "${queryText}"
+            const matchPrompt = `You are an expert AI fuzzy matching assistant for Yono Master Gaming. 
+            User message / voice transcription: "${queryText}"
             Available games in database: ${JSON.stringify(availableGames)}
             
-            Task: Determine if the user is asking for one of the available games from the list (regardless of language like Bengali, Hindi, English, phonetic spelling, or asking for codes/links). 
-            If it matches one of the games, output EXACTLY the game name from the list. 
-            If it does not match any game, output "NONE". Do not include any extra text.`;
+            Task: Determine if the user is asking for one of the available games from the list. 
+            Important Instructions:
+            1. The user can speak or write in any language (Bengali, Hindi, English, etc.).
+            2. The voice transcription or text might contain phonetic spellings, colloquial variations, or slight mispronunciations (e.g., Bengali words like "অনুরামি", "অনুরমি", "ইয়োনো রমি" refer to "Yono Rummy"). 
+            3. Use smart phonetic matching and intent recognition to connect what the user said/wrote to the correct game name in the list.
+            4. If it matches or refers to one of the games, output EXACTLY the exact game name from the list. 
+            5. If it does not match any game, output "NONE". Do not include any extra text.`;
 
             const matchCompletion = await groq.chat.completions.create({
                 messages: [{ role: "user", content: matchPrompt }],
@@ -728,4 +732,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Head AI bot running successfully with AI multilingual game matching, language support, and 4-message limit!");
+console.log("Yono Master Head AI bot running successfully with advanced phonetic fuzzy matching and multilingual voice support!");
