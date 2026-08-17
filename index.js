@@ -21,7 +21,7 @@ const UPCOMING_FILE = 'upcoming.json';
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID ? Number(process.env.ADMIN_CHAT_ID) : null;
 
-// আপনার কোম্পানির অফিশিয়াল ও এক্সক্লুসিভ গেমগুলোর স্থায়ী তালিকা
+// কোম্পানির অফিশিয়াল গেমগুলোর গোপন তালিকা (এটি শুধু বটের মেমোরিতে সেভ থাকবে, কাউকে লিস্ট পাঠানো হবে না)
 const OFFICIAL_COMPANY_GAMES = [
     "Win Rummy", "Dhan Game", "Max Rummy", "Jaiho777Vip", "Jaiho91", "Joy Rummy", 
     "INR Rummy", "BOSS Rummy", "Ever777", "Rummy888", "Rummy 77", "RummyLudo", 
@@ -75,21 +75,25 @@ function addUpcomingGame(name, date) {
     fs.writeFileSync(UPCOMING_FILE, JSON.stringify(list, null, 2));
 }
 
+// এআই-এর জন্য শক্তিশালী ও প্রফেশনাল সিস্টেম প্রম্পট
 function getSystemPrompt() {
     let upcomingList = getUpcomingGames();
     let upcomingSection = "";
 
     if (upcomingList.length > 0) {
-        upcomingSection = "CURRENT UPCOMING GAMES & LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n');
+        upcomingSection = "CURRENT UPCOMING GAMES LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n');
     } else {
         upcomingSection = "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled.";
     }
 
-    return `You are the official, intelligent, and exclusive AI companion and head assistant for **Yono Master Gaming**.
+    return `You are the official, intelligent, smart, and realistic AI owner and head companion for **Yono Master Gaming**.
 
 CRITICAL & STRICT BEHAVIORAL RULES:
-1. **KEEP CASUAL REPLIES SHORT & NATURAL**: For general greetings, love, or friendly chats (e.g., "Good morning my friend", "How are you?"), reply warmly and very briefly (1-2 sentences max).
-2. **STRICT LANGUAGE MIRRORING**: Detect the user's language and reply in the exact same language and script using natural and correct grammar.
+1. **INTERNAL MEMORY PROTECTION**: You have a secret internal memory of company games (like Win Rummy, YonoRummy, Jaiho777, SlotsWinner, etc.). **NEVER** list out, dump, or display all the game names to any user under any circumstances. If a user asks for a list of games or how many games there are, do NOT list them. Instead, politely and engagingly tell them to mention their favorite game name.
+2. **OWNERSHIP & PROPRIETARY PRIDE**: All games in your memory belong exclusively to **Yono Master Gaming** (our own company). 
+3. **GAME RECOGNITION & ENGAGEMENT**: When a user sends a specific game name that matches your internal company games, respond with high energy, enthusiasm, and pride. Let them know instantly: "এটি আমাদের নিজস্ব কোম্পানির অত্যন্ত জনপ্রিয় ও এক্সক্লুসিভ একটি গেম! আপনি কি এই গেমটি খেলতে চান? আমাদের প্ল্যাটফর্মে খেলে পেতে পারেন দারুণ ভিআইপি বোনাস ও স্পেশাল প্রমো কোড!" (or in the user's language). Make it sound completely natural, engaging, and realistic.
+4. **NATURAL CONVERSATION**: Never sound repetitive or robotic. Reply intelligently and warmly based on what the user says.
+5. **LANGUAGE MIRRORING**: Detect the user's language and reply in the exact same language and script using natural and correct grammar.
 
 ${upcomingSection}`;
 }
@@ -507,17 +511,15 @@ async function handleUserQuery(chatId, queryText) {
         await bot.sendChatAction(chatId, 'typing');
 
         let matchedGameName = null;
-        let isListRequested = false;
 
-        // এআই দিয়ে চেক করা ইউজার কি সব গেমের তালিকা চাচ্ছে, নাকি নির্দিষ্ট কোনো গেমের নাম?
+        // নিখুঁত ম্যাচিং প্রম্পট যা গেমের নাম ইন্টার্নালি মেমোরিতে চেক করবে কিন্তু লিস্ট কখনোই পাঠাবে না
         const matchPrompt = `You are an elite game identifier for Yono Master Gaming.
         User input: "${queryText}"
         Official Company Games List: ${JSON.stringify(OFFICIAL_COMPANY_GAMES)}
         
         Task: 
-        1. Check if the user is asking for the complete list of games, all game names, or how many games exist (in any language like Bengali or English). If yes, output EXACTLY "LIST_REQUEST".
-        2. Check if the user input matches, refers to, or mentions any specific game name strictly from the Official Company Games List above. If it matches a specific game, output ONLY the exact game name from the list.
-        3. Otherwise, output "NONE". Do not include any extra text.`;
+        1. Check if the user input matches, refers to, or mentions any specific game name strictly from the Official Company Games List above. If it matches a specific game, output ONLY the exact game name from the list.
+        2. If it does not match any specific official game, output "NONE". Do not include any extra text.`;
 
         const matchCompletion = await groq.chat.completions.create({
             messages: [{ role: "user", content: matchPrompt }],
@@ -527,18 +529,8 @@ async function handleUserQuery(chatId, queryText) {
 
         let aiMatchResult = matchCompletion.choices[0]?.message?.content?.trim();
         
-        if (aiMatchResult === "LIST_REQUEST") {
-            isListRequested = true;
-        } else if (aiMatchResult && aiMatchResult !== "NONE" && OFFICIAL_COMPANY_GAMES.includes(aiMatchResult)) {
+        if (aiMatchResult && aiMatchResult !== "NONE" && OFFICIAL_COMPANY_GAMES.includes(aiMatchResult)) {
             matchedGameName = aiMatchResult;
-        }
-
-        // যদি ইউজার সব গেমের তালিকা দেখতে চায়
-        if (isListRequested) {
-            let gameListStr = OFFICIAL_COMPANY_GAMES.map((g, idx) => `${idx + 1}. <b>${g}</b>`).join('\n');
-            let fullListMsg = `🎮 <b>Yono Master Gaming Official Games (${OFFICIAL_COMPANY_GAMES.length} Apps):</b>\n\n${gameListStr}\n\n✨ <i>যে কোনো গেমের ভিআইপি কোড পেতে গেমের নামটি লিখে পাঠান!</i>`;
-            await sendSingleMessage(chatId, fullListMsg, null, null);
-            return;
         }
 
         // যদি ইউজার নির্দিষ্ট কোনো গেমের নাম পাঠায়
@@ -551,17 +543,17 @@ async function handleUserQuery(chatId, queryText) {
                 await sendSingleMessage(chatId, foundPost.text, foundPost.photo, foundPost.replyMarkup);
                 return;
             } else {
-                let customMsg = `🎰 <b>${matchedGameName}</b> হলো <b>Yono Master Gaming</b>-এর একটি এক্সক্লুসিভ ও অফিশিয়াল গেম!\n\nএটি আমাদের কোম্পানির নিজস্ব গেম। আপনি এই গেমটি খেলে দারুণ বোনাস ও ভিআইপি প্রোমো কোড পেতে পারেন! 🚀`;
+                let customMsg = `🔥 <b>অসাধারণ পছন্দ!</b>\n\n🎰 <b>${matchedGameName}</b> হলো আমাদের নিজস্ব <b>Yono Master Gaming</b> কোম্পানির একটি এক্সক্লুসিভ ও অফিশিয়াল গেম! 👑\n\nএই গেমটি আমাদের নিজস্ব প্ল্যাটফর্মের অংশ। আপনি কি এই গেমটি খেলতে চান এবং দারুণ সব ভিআইপি বোনাস ও স্পেশাল প্রোমো কোড পেতে চান? 🚀`;
                 await sendSingleMessage(chatId, customMsg, null, null);
                 return;
             }
         }
 
-        // সাধারণ কথার উত্তর (ছোট ও মিষ্টি)
+        // সাধারণ কথার বা অন্য কোনো প্রশ্নের জন্য বাস্তবসম্মত ও আকর্ষণীয় এআই রেসপন্স
         const completion = await groq.chat.completions.create({
             messages: [
                 { role: "system", content: getSystemPrompt() },
-                { role: "user", content: `[STRICT RULE: Reply ONLY with 1 or 2 short, sweet, natural sentences in the exact same language and script as the user message below.]\n\n${queryText}` }
+                { role: "user", content: `[STRICT RULE: Reply naturally, realistically, and engagingly in the exact same language and script as the user message below. Never list all games. If they ask for games list, tell them warmly to name their favorite game.]\n\n${queryText}` }
             ],
             model: "llama-3.3-70b-versatile",
         });
@@ -569,14 +561,14 @@ async function handleUserQuery(chatId, queryText) {
         let aiReply = completion.choices[0]?.message?.content;
         
         if (!aiReply) {
-            aiReply = "Hello my friend! Send me your favorite game name from Yono Master Gaming to get your VIP promo codes!";
+            aiReply = "হ্যালো আমার বন্ধু! Yono Master Gaming থেকে আপনার পছন্দের গেমের নামটি লিখে পাঠান, আর জিতে নিন আকর্ষণীয় ভিআইপি বোনাস!";
         }
 
         await sendSingleMessage(chatId, aiReply, null, null);
 
     } catch (aiErr) {
         console.error("Groq AI Error:", aiErr.message);
-        let fallbackMessage = "Hello my friend! Send me your favorite game name from Yono Master Gaming to get your VIP promo codes!";
+        let fallbackMessage = "হ্যালো আমার বন্ধু! Yono Master Gaming থেকে আপনার পছন্দের গেমের নামটি লিখে পাঠান, আর জিতে নিন আকর্ষণীয় ভিআইপি বোনাস!";
         await sendSingleMessage(chatId, fallbackMessage, null, null);
     }
 }
@@ -609,11 +601,11 @@ async function handleVoiceMessage(msg) {
         if (transcribedText && transcribedText.trim().length > 0) {
             await handleUserQuery(chatId, transcribedText);
         } else {
-            await sendSingleMessage(chatId, "I couldn't understand your voice message clearly. Please try again or type the game name.", null, null);
+            await sendSingleMessage(chatId, "আপনার ভয়েস মেসেজটি পরিষ্কার বুঝতে পারিনি। দয়া করে গেমের নামটি লিখে পাঠান।", null, null);
         }
     } catch (e) {
         console.error("Voice transcription error:", e);
-        await sendSingleMessage(chatId, "Sorry, your voice message could not be processed. Please try again or type the game name.", null, null);
+        await sendSingleMessage(chatId, "দুঃখিত, ভয়েস প্রসেস করা যায়নি। দয়া করে গেমের নামটি লিখে পাঠান।", null, null);
     }
 }
 
@@ -684,9 +676,9 @@ bot.on('message', async (msg) => {
             }
             
             const welcomeText = `<b>Welcome to Yono Master Head AI! 💖</b>\n\n` +
-                `👑 Hello my dear friend! I am your loving and smart AI companion from <b>Yono Master Gaming</b>. I'm always here to chat with you and share amazing moments together! Also, whenever you want to play, just send me any game name from our platform, and I'll instantly get you exclusive VIP promo codes and bonuses!\n\n` +
+                `👑 হ্যালো আমার প্রিয় বন্ধু! আমি <b>Yono Master Gaming</b>-এর অফিশিয়াল ও স্মার্ট এআই অ্যাসিস্ট্যান্ট। আপনার সাথে আড্ডা দিতে এবং আমাদের নিজস্ব এক্সক্লুসিভ গেমগুলোর ভিআইপি বোনাস ও প্রোমো কোড দিতে আমি সর্বদা প্রস্তুত!\n\n` +
                 upcomingText +
-                `🎮 Let's chat and explore our amazing games together!`;
+                `🎮 আপনার পছন্দের গেমের নামটি এখনই আমাকে পাঠান!`;
             
             try {
                 let textMsg = await bot.sendMessage(chatId, welcomeText, { parse_mode: "HTML", disable_web_page_preview: true });
@@ -722,12 +714,12 @@ bot.on('message', async (msg) => {
 });
 
 const weeklyMessage = `⚡ <b>WEEKLY VIP BONUS & YONO PROMO CODE ALERT!</b> ⚡\n\n` +
-    `👑 <b>Hello my sweet friend!</b>\n\n` +
-    `Just wanted to check in on you! Don't forget, I have amazing exclusive games and VIP promo codes waiting just for you from <b>Yono Master Gaming</b>. 💰\n\n` +
-    `🔥 <b>WHAT TO DO RIGHT NOW:</b>\n` +
-    `• 🎮 Send the name of <b>ANY of our platform games</b> via text or voice message right now!\n` +
-    `• 💎 Claim your official VIP promo codes and download links instantly!\n\n` +
-    `👑 <i>Come chat with me and grab your free bonus now! 🚀</i>`;
+    `👑 <b>হ্যালো আমার মিষ্টি বন্ধু!</b>\n\n` +
+    `আমাদের <b>Yono Master Gaming</b> কোম্পানির চমৎকার সব এক্সক্লুসিভ গেমের ভিআইপি বোনাস আপনার জন্য অপেক্ষা করছে। 💰\n\n` +
+    `🔥 <b>এখনই যা করবেন:</b>\n` +
+    `• 🎮 আমাদের প্ল্যাটফর্মের যেকোনো গেমের নাম লিখে পাঠান!\n` +
+    `• 💎 ইনস্ট্যান্ট ভিআইপি প্রোমো কোড এবং ডাউনলোড লিংক সংগ্রহ করুন!\n\n` +
+    `👑 <i>আজই চ্যাট করুন এবং আপনার ফ্রি বোনাস লুফে নিন! 🚀</i>`;
 
 cron.schedule('0 10 * * 0', () => {
     if (botUsers && botUsers.length > 0) {
@@ -739,4 +731,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Head AI bot running successfully with complete game list support!");
+console.log("Yono Master Head AI bot running successfully with hidden internal game memory and engaging replies!");
