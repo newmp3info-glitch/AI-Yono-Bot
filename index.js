@@ -435,6 +435,13 @@ async function handleUserQuery(chatId, queryText) {
         await bot.sendChatAction(chatId, 'typing');
 
         let cleanQuery = queryText.trim().toLowerCase();
+        
+        // যদি খুব ছোট বা একক অক্ষর লেখা হয়, তবে এআই-এর কাছে না পাঠিয়ে সরাসরি গেমের নাম দিতে বলুন
+        if (cleanQuery.length < 2) {
+            await sendSingleMessage(chatId, "Please type your favorite game name (e.g., Win Rummy, Yono 777) to get instant promo codes and download links!", null, null);
+            return;
+        }
+
         let normalizedQuery = cleanQuery.replace(/[\s._-]/g, '');
 
         let matchedGameObj = OFFICIAL_COMPANY_GAMES.find(g => {
