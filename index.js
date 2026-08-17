@@ -63,7 +63,7 @@ const OFFICIAL_COMPANY_GAMES = [
     { name: "YonoRummy", aliases: ["yonorummy", "যোনো রামি", "योनो रम्मी"] },
     { name: "Bingo101", aliases: ["bingo101", "বিঙ্গো ১০১", "बिंगो 101"] },
     { name: "789JackPots", aliases: ["789jackpots", "৭৮৯ জ্যাকপট", "789 जैकपॉट"] },
-    { name: "YonoArcade", aliases: ["yonoarcade", "যোনো আর্কেড", "योनो आर्केड"] },
+    { name: "YonoArcade", aliases: ["yonoarcade", "যোনো আর্কেड", "योनो आर्केड"] },
     { name: "YonoGames", aliases: ["yonogames", "যোনো গেমস্", "योनो गेम्स"] },
     { name: "JaiHoSpin", aliases: ["jaihospin", "जयहो स्पिन"] },
     { name: "YonoSlots", aliases: ["yonoslots", "যোনো স্লটস", "योनो स्लॉट्स"] },
@@ -460,13 +460,13 @@ async function handleUserQuery(chatId, queryText) {
             return;
         }
 
-        // ২. Groq AI দিয়ে ডায়নামিক এবং ব্যবহারকারীর নিজস্ব ভাষাতে উত্তর জেনারেট করা (সঠিক মডেল ব্যবহার করা হয়েছে)
+        // ২. Groq AI এর মাধ্যমে সঠিক ও সচল মডেল (llama-3.3-70b-specdec) ব্যবহার করে উত্তর জেনারেট করা
         const aiResponse = await groq.chat.completions.create({
             messages: [
                 { role: "system", content: getSystemPrompt(queryText) },
                 { role: "user", content: queryText }
             ],
-            model: "llama-3.1-70b-versatile",
+            model: "llama-3.3-70b-specdec",
             temperature: 0.7,
         });
 
@@ -598,4 +598,4 @@ bot.on('message', async (msg) => {
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully with fully fixed AI model and promotional logic!");
+console.log("Yono Gaming Head AI bot running successfully with active Groq model and promotional logic!");
