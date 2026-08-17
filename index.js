@@ -463,7 +463,7 @@ async function handleUserQuery(chatId, queryText) {
                 { role: "system", content: getSystemPrompt(queryText) },
                 { role: "user", content: queryText }
             ],
-            model: "llama-3.1-8b-instant",
+            model: "llama-3.3-70b-versatile",
             temperature: 0.7,
         });
 
