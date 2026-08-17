@@ -130,7 +130,7 @@ function getSystemPrompt(userQuery) {
 
 CRITICAL INSTRUCTIONS:
 1. **STRICT LANGUAGE & SCRIPT MATCHING**: The user wrote: "${userQuery}". You MUST detect the exact language and script of this message (e.g., Bengali, English, Hindi, etc.) and reply **100% in that exact same language and script**. Never switch languages or scripts.
-2. **ATTRACTIVE & HELPFUL CONVERSATION**: Answer any casual questions, greetings (like Hi, Hello), or help requests (like "Help me") warmly, politely, and attractively in their language (e.g., warmly greeting them and asking how you can assist them with Yono games and promo codes).
+2. **ATTRACTIVE & HELPFUL CONVERSATION**: Answer any casual questions, greetings (like Hi, Hello), or help requests (like "Help me") warmly, politely, and attractively in their language.
 3. **EXCLUSIVE PROMOTION**: Casually and enthusiastically remind them that our company creates the best Yono games and high-value promo codes available exclusively here.
 
 ${upcomingSection}`;
@@ -247,10 +247,6 @@ function formatPostTimestamp(timestamp) {
 
 function smartFormatPost(text, entities, timestamp) {
     if (!text) return '';
-    if (text.includes('All Yono Apps') && !text.toLowerCase().includes('code')) {
-        return text; 
-    }
-
     let downloadUrl = '';
     if (entities && entities.length > 0) {
         entities.forEach(entity => {
@@ -349,10 +345,6 @@ function smartFormatPost(text, entities, timestamp) {
                 formattedLines.push(trimmed);
             }
         } 
-        else if (lower.includes('minimum') || lower.includes('withdrawal')) {
-            let cleanLine = trimmed.replace(/<[^>]*>/g, '');
-            formattedLines.push(`<b>${cleanLine}</b>`);
-        } 
         else {
             if (trimmed.includes('➔') || trimmed.includes('->') || trimmed.includes('➜')) {
                 let parts = trimmed.split(/➔|->|➜/);
@@ -363,13 +355,6 @@ function smartFormatPost(text, entities, timestamp) {
                     formattedLines.push(`<b>${label}</b> ➜ <code>${safeCode}</code>`);
                     return;
                 }
-            }
-
-            if (!trimmed.includes(' ') && (trimmed.includes('.') || lower.includes('http'))) {
-                let cleanCode = trimmed.replace(/<[^>]*>/g, '').replace(/`/g, '').trim();
-                let safeCode = cleanCode.replace(/\./g, '.\u200B');
-                formattedLines.push(`<code>${safeCode}</code>`);
-                return;
             }
 
             let formattedLine = trimmed.replace(/(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z0-9][-a-zA-Z0-9]*[^\s]*\.(com|win|net|top|app|vip|in|store|club|xyz|buzz|bet)[^\s]*)/gi, (match) => {
@@ -467,7 +452,7 @@ async function handleUserQuery(chatId, queryText) {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "llama-3.3-70b-versatile",
+                model: "llama-3.1-8b-instant",
                 messages: [
                     { role: "system", content: getSystemPrompt(queryText) },
                     { role: "user", content: aiPromptText }
@@ -477,6 +462,12 @@ async function handleUserQuery(chatId, queryText) {
         });
 
         const data = await response.json();
+
+        if (data.error) {
+            await sendSingleMessage(chatId, `⚠️ <b>Groq API Error:</b> ${data.error.message}`, null, null);
+            return;
+        }
+
         let aiReply = data.choices?.[0]?.message?.content;
 
         if (aiReply) {
@@ -487,7 +478,7 @@ async function handleUserQuery(chatId, queryText) {
 
     } catch (aiErr) {
         console.error("Groq AI Error:", aiErr.message);
-        await sendSingleMessage(chatId, `⚠️ AI Connection Notice: Please make sure your <code>GROQ_API_KEY</code> is correctly added in Render Environment Variables.`, null, null);
+        await sendSingleMessage(chatId, `⚠️ <b>AI Connection Error:</b> ${aiErr.message}`, null, null);
     }
 }
 
