@@ -459,13 +459,13 @@ async function handleUserQuery(chatId, queryText) {
             return;
         }
 
-        // Groq AI মডেল আপডেট করে সঠিক ও সচল মডেল (llama-3.3-70b-versatile) দেওয়া হলো
+        // Groq AI মডেলে সর্বজনীন ও সচল মডেল (llama-3.1-8b-instant) ব্যবহার করা হলো
         const aiResponse = await groq.chat.completions.create({
             messages: [
                 { role: "system", content: getSystemPrompt(queryText) },
                 { role: "user", content: queryText }
             ],
-            model: "llama-3.3-70b-versatile",
+            model: "llama-3.1-8b-instant",
             temperature: 0.7,
         });
 
