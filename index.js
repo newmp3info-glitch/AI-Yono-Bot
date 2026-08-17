@@ -21,18 +21,66 @@ const UPCOMING_FILE = 'upcoming.json';
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID ? Number(process.env.ADMIN_CHAT_ID) : null;
 
-// কোম্পানির অফিশিয়াল গেমগুলোর মেমোরি লিস্ট
+// কোম্পানির অফিশিয়াল গেমগুলোর মেমোরি লিস্ট (বাংলা ও ইংরেজি নাম ম্যাপিংসহ)
 const OFFICIAL_COMPANY_GAMES = [
-    "Win Rummy", "Dhan Game", "Max Rummy", "Jaiho777Vip", "Jaiho91", "Joy Rummy", 
-    "INR Rummy", "BOSS Rummy", "Ever777", "Rummy888", "Rummy 77", "RummyLudo", 
-    "777.Game", "OKRummy", "Hindi777", "ClubINR", "GameRummy", "YesSpin", 
-    "RumbleRummy", "LoveRummy", "ShareSlots", "MahaGames", "HiRummy", "JaihoWin", 
-    "INDCLUB", "TOPRummy", "IndRummy", "JaihoSlots", "SagaSlots", "GogoRummy", 
-    "Rummy91", "ABCRummy", "JaihoRummy", "INDSlots", "Spin101", "YonoVip", 
-    "Spin777", "Bet213", "YonoRummy", "Bingo101", "789JackPots", "YonoArcade", 
-    "YonoGames", "JaiHoSpin", "YonoSlots", "567Slots", "Yono777", "YN777", 
-    "SlotsSpin", "NetaVIP", "JaiHoArcade", "JaiHo777", "SlotsWinner", "101Z", 
-    "SpinGold", "SpinCrush", "MBM", "SpinWinner"
+    { name: "Win Rummy", aliases: ["win rummy", "উইন রামি"] },
+    { name: "Dhan Game", aliases: ["dhan game", "ধান গেম", "dhan"] },
+    { name: "Max Rummy", aliases: ["max rummy", "ম্যাক্স রামি"] },
+    { name: "Jaiho777Vip", aliases: ["jaiho777vip", "jaiho 777", "জైহো"] },
+    { name: "Jaiho91", aliases: ["jaiho91", "jaiho 91"] },
+    { name: "Joy Rummy", aliases: ["joy rummy", "জয় রামি"] },
+    { name: "INR Rummy", aliases: ["inr rummy", "আইএনআর রামি"] },
+    { name: "BOSS Rummy", aliases: ["boss rummy", "বস রামি"] },
+    { name: "Ever777", aliases: ["ever777", "এবার ৭৭৭"] },
+    { name: "Rummy888", aliases: ["rummy888", "রামি ৮৮৮"] },
+    { name: "Rummy 77", aliases: ["rummy 77", "রামি ৭৭"] },
+    { name: "RummyLudo", aliases: ["rummyludo", "rummy ludo", "রামি লুডো"] },
+    { name: "777.Game", aliases: ["777.game", "777 game"] },
+    { name: "OKRummy", aliases: ["okrummy", "ওকে রামি"] },
+    { name: "Hindi777", aliases: ["hindi777", "হিন্দি ৭৭৭"] },
+    { name: "ClubINR", aliases: ["clubinr", "ক্লাব আইএনআর"] },
+    { name: "GameRummy", aliases: ["gamerummy", "গেম রামি"] },
+    { name: "YesSpin", aliases: ["yesspin", "ইয়েস স্পিন"] },
+    { name: "RumbleRummy", aliases: ["rumblerummy"] },
+    { name: "LoveRummy", aliases: ["loverummy", "লাভ রামি"] },
+    { name: "ShareSlots", aliases: ["shareslots"] },
+    { name: "MahaGames", aliases: ["mahagames", "মহা গেমস্"] },
+    { name: "HiRummy", aliases: ["hirummy", "হাই রামি"] },
+    { name: "JaihoWin", aliases: ["jaihowin"] },
+    { name: "INDCLUB", aliases: ["indclub", "ইন্ড ক্লাব"] },
+    { name: "TOPRummy", aliases: ["toprummy", "টপ রামি"] },
+    { name: "IndRummy", aliases: ["indrummy", "ইন্ড রামি"] },
+    { name: "JaihoSlots", aliases: ["jaihoslots"] },
+    { name: "SagaSlots", aliases: ["sagaslots"] },
+    { name: "GogoRummy", aliases: ["gogorummy", "গোগো রামি"] },
+    { name: "Rummy91", aliases: ["rummy91", "রামি ৯১"] },
+    { name: "ABCRummy", aliases: ["abcrummy"] },
+    { name: "JaihoRummy", aliases: ["jaihorummy"] },
+    { name: "INDSlots", aliases: ["indslots"] },
+    { name: "Spin101", aliases: ["spin101", "স্পিন ১০১"] },
+    { name: "YonoVip", aliases: ["yonovip", "যোনো ভিআইপি"] },
+    { name: "Spin777", aliases: ["spin777", "স্পিন ৭৭৭"] },
+    { name: "Bet213", aliases: ["bet213", "বেট ২১৩"] },
+    { name: "YonoRummy", aliases: ["yonorummy", "যোনো রামি"] },
+    { name: "Bingo101", aliases: ["bingo101", "বিঙ্গো ১০১"] },
+    { name: "789JackPots", aliases: ["789jackpots", "৭৮৯ জ্যাকপট"] },
+    { name: "YonoArcade", aliases: ["yonoarcade", "যোনো আর্কেড"] },
+    { name: "YonoGames", aliases: ["yonogames", "যোনো গেমস্"] },
+    { name: "JaiHoSpin", aliases: ["jaihospin"] },
+    { name: "YonoSlots", aliases: ["yonoslots", "যোনো স্লটস"] },
+    { name: "567Slots", aliases: ["567slots", "৫৬৭ স্লটস"] },
+    { name: "Yono777", aliases: ["yono777", "যোনো ৭৭৭"] },
+    { name: "YN777", aliases: ["yn777"] },
+    { name: "SlotsSpin", aliases: ["slotsspin"] },
+    { name: "NetaVIP", aliases: ["netavip", "neta vip", "নেতা ভিআইপি", "নেতাভিআইপি"] },
+    { name: "JaiHoArcade", aliases: ["jaihoarcade"] },
+    { name: "JaiHo777", aliases: ["jaiho777"] },
+    { name: "SlotsWinner", aliases: ["slotswinner", "স্লটস উইনার"] },
+    { name: "101Z", aliases: ["101z"] },
+    { name: "SpinGold", aliases: ["spingold", "স্পিন গোল্ড"] },
+    { name: "SpinCrush", aliases: ["spincrush", "স্পিন ক্রাশ"] },
+    { name: "MBM", aliases: ["mbm", "এমবিএম"] },
+    { name: "SpinWinner", aliases: ["spinwinner", "স্পিন উইনার"] }
 ];
 
 if (!fs.existsSync(UPCOMING_FILE)) {
@@ -75,7 +123,6 @@ function addUpcomingGame(name, date) {
     fs.writeFileSync(UPCOMING_FILE, JSON.stringify(list, null, 2));
 }
 
-// ইউনিভার্সাল ভাষা সাপোর্ট ও ব্র্যান্ড সিস্টেম প্রম্পট
 function getSystemPrompt() {
     let upcomingList = getUpcomingGames();
     let upcomingSection = "";
@@ -89,8 +136,8 @@ function getSystemPrompt() {
     return `You are the official, intelligent, realistic AI companion and head assistant for **Yono Master Gaming**.
 
 CRITICAL & STRICT BEHAVIORAL RULES:
-1. **UNIVERSAL LANGUAGE MIRRORING**: Detect the exact language, dialect, and script used by the user (whether it is English, Spanish, French, Arabic, Hindi, Bengali, Russian, Chinese, Portuguese, or any other language worldwide). You MUST reply in that exact same language and script naturally. Never switch to another language unless requested.
-2. **EXCLUSIVE BRAND FOCUS**: Yono Master Gaming ONLY features our own exclusive, official company games and promo codes. We do not provide or promote any other third-party or competitor games.
+1. **UNIVERSAL LANGUAGE MIRRORING**: Detect the exact language, dialect, and script used by the user and reply in that exact same language and script naturally.
+2. **EXCLUSIVE BRAND FOCUS**: Yono Master Gaming ONLY features our own exclusive, official company games and promo codes.
 3. **INTERNAL MEMORY PROTECTION**: Never output or leak the internal list of company games to any user.
 
 ${upcomingSection}`;
@@ -508,28 +555,46 @@ async function handleUserQuery(chatId, queryText) {
     try {
         await bot.sendChatAction(chatId, 'typing');
 
-        // ১. প্রথমেই ডেটাবেসে সেভ থাকা পোস্টগুলোর সাথে ইউজারের ইনপুটের হুবহু বা কাছাকাছি মিল (Exact/Fuzzy Match) চেক করা
         let cleanQuery = queryText.trim().toLowerCase();
-        let matchedPost = postDatabase.all_posts.find(p => {
-            let firstLine = p.text.split('\n')[0].replace(/<[^>]*>/g, '').trim().toLowerCase();
-            let rawLower = p.rawText.toLowerCase();
-            return firstLine === cleanQuery || rawLower.includes(cleanQuery);
-        });
+
+        // ১. উন্নত ডাটাবেস ম্যাচিং: বাংলা বা ইংরেজি যেকোনো নাম ইনপুট দিলেই সরাসরি পোস্ট খুঁজে বের করবে
+        let matchedGameObj = OFFICIAL_COMPANY_GAMES.find(g => 
+            g.name.toLowerCase() === cleanQuery || 
+            g.aliases.some(alias => cleanQuery.includes(alias))
+        );
+
+        let matchedPost = null;
+        if (matchedGameObj) {
+            matchedPost = postDatabase.all_posts.find(p => {
+                let firstLine = p.text.split('\n')[0].replace(/<[^>]*>/g, '').trim().toLowerCase();
+                let rawLower = p.rawText.toLowerCase();
+                return firstLine.includes(matchedGameObj.name.toLowerCase()) || rawLower.includes(matchedGameObj.name.toLowerCase());
+            });
+        }
+
+        // যদি সরাসরি নামে না মেলে, তবে পুরো পোস্ট ডাটাবেসে কুয়েরি করবে
+        if (!matchedPost) {
+            matchedPost = postDatabase.all_posts.find(p => {
+                let firstLine = p.text.split('\n')[0].replace(/<[^>]*>/g, '').trim().toLowerCase();
+                let rawLower = p.rawText.toLowerCase();
+                return firstLine === cleanQuery || rawLower.includes(cleanQuery);
+            });
+        }
 
         if (matchedPost) {
-            // ডাটাবেসে পোস্ট বা প্রমো কোড পাওয়া গেলে তৎক্ষণাৎ সেটি পাঠিয়ে দেওয়া হবে
             await sendSingleMessage(chatId, matchedPost.text, matchedPost.photo, matchedPost.replyMarkup);
             return;
         }
 
-        // ২. যদি সরাসরি পোস্ট না থাকে, তবে এআই-এর মাধ্যমে ইনপুট বিশ্লেষণ ও ইউনিভার্সাল ভাষা ম্যাপ করা
+        // ২. এআই প্রম্পট ও ভাষা শনাক্তকরণ
+        const gameNamesList = OFFICIAL_COMPANY_GAMES.map(g => g.name);
         const analysisPrompt = `You are the core intelligence of Yono Master Gaming bot.
 User input: "${queryText}"
-Official Company Games List: ${JSON.stringify(OFFICIAL_COMPANY_GAMES)}
+Official Company Games List: ${JSON.stringify(gameNamesList)}
 
 Analyze the user input and classify it strictly into one of three categories:
 1. "LIST_REQUEST": If the user is asking for the complete list of games, how many games exist, or asking to see all games.
-2. "MATCHED_GAME: [Exact Game Name]": If the user input mentions or refers to a game name that matches ONE specific game from the Official Company Games List above.
+2. "MATCHED_GAME: [Exact Game Name]": If the user input mentions or refers to a game name that matches ONE specific game from the Official Company Games List above (even if written in Bengali/Hindi/English transliteration).
 3. "INVALID_GAME_OR_CHAT": If the user mentions a fake name, unlisted game, competitor game, or if it's general casual chat/other questions.
 
 Output ONLY ONE of the above categories without any extra text.`;
@@ -542,7 +607,6 @@ Output ONLY ONE of the above categories without any extra text.`;
 
         let aiResult = analysisCompletion.choices[0]?.message?.content?.trim() || "";
 
-        // ৩. লিস্ট রিকোয়েস্ট হ্যান্ডেল করা (ইউজারের ভাষাতেই উত্তর দেবে)
         if (aiResult === "LIST_REQUEST") {
             const listRefusalPrompt = `You are the official AI companion for Yono Master Gaming. The user asked for a complete list of all games.
 Rules:
@@ -560,14 +624,26 @@ Rules:
             return;
         }
 
-        // ৪. অফিশিয়াল গেমের নাম মেলানো কিন্তু ডাটাবেসে পোস্ট না থাকলে
         if (aiResult.startsWith("MATCHED_GAME:")) {
             let matchedGameName = aiResult.replace("MATCHED_GAME:", "").trim();
-            if (OFFICIAL_COMPANY_GAMES.includes(matchedGameName)) {
-                const gameFoundPrompt = `You are the official AI of Yono Master Gaming. The user mentioned our official company game: "${matchedGameName}".
+            let foundGame = OFFICIAL_COMPANY_GAMES.find(g => g.name.toLowerCase() === matchedGameName.toLowerCase());
+            
+            if (foundGame) {
+                // যদি পুনরায় ডাটাবেসে পোস্ট খুঁজে পাওয়া যায়
+                let foundPostInDb = postDatabase.all_posts.find(p => {
+                    let firstLine = p.text.split('\n')[0].replace(/<[^>]*>/g, '').trim().toLowerCase();
+                    return firstLine.includes(foundGame.name.toLowerCase()) || p.rawText.toLowerCase().includes(foundGame.name.toLowerCase());
+                });
+
+                if (foundPostInDb) {
+                    await sendSingleMessage(chatId, foundPostInDb.text, foundPostInDb.photo, foundPostInDb.replyMarkup);
+                    return;
+                }
+
+                const gameFoundPrompt = `You are the official AI of Yono Master Gaming. The user mentioned our official company game: "${foundGame.name}".
 Rules:
 - Detect the user's language and script from: "${queryText}". You MUST reply in that exact same language and script.
-- Enthusiastically and proudly confirm that "${matchedGameName}" is our very own official and exclusive company game at Yono Master Gaming.
+- Enthusiastically and proudly confirm that "${foundGame.name}" is our very own official and exclusive company game at Yono Master Gaming.
 - Invite them to play and grab VIP bonuses/promo codes.
 - Keep it natural, engaging, and realistic (1-2 sentences).`;
 
@@ -575,18 +651,17 @@ Rules:
                     messages: [{ role: "user", content: gameFoundPrompt }],
                     model: "llama-3.3-70b-versatile",
                 });
-                let gameReply = gameComp.choices[0]?.message?.content || `Great choice! ${matchedGameName} is our official exclusive game at Yono Master Gaming!`;
+                let gameReply = gameComp.choices[0]?.message?.content || `Great choice! ${foundGame.name} is our official exclusive game at Yono Master Gaming!`;
                 await sendSingleMessage(chatId, gameReply, null, null);
                 return;
             }
         }
 
-        // ৫. ভুংভাং নাম বা অন্য সাধারণ চ্যাট হলে (সম্পূর্ণ ইউনিভার্সাল ভাষায় উত্তর দেবে)
         const generalPrompt = `You are the intelligent official AI assistant for **Yono Master Gaming**.
 User input: "${queryText}"
 
 Rules:
-1. **UNIVERSAL LANGUAGE & SCRIPT MIRRORING**: Detect the user's language, dialect, and script (English, Spanish, French, Arabic, Hindi, Bengali, Chinese, etc.) and reply in the exact same language and script.
+1. **UNIVERSAL LANGUAGE & SCRIPT MIRRORING**: Detect the user's language, dialect, and script and reply in the exact same language and script.
 2. **INVALID / FAKE GAMES**: If the user mentioned a game name that is NOT one of our official company games (fake names, unlisted games, competitor games), clearly and politely inform them in their own language that **this is not our company's game**, and that Yono Master Gaming only features our own exclusive official games and promo codes. Ask them to send a valid game name from our platform.
 3. **GENERAL CHAT**: If it's a casual greeting, reply warmly and briefly (1-2 sentences) maintaining the Yono Master Gaming branding in their language.`;
 
@@ -766,4 +841,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Head AI bot running successfully with universal language support and instant database post matching!");
+console.log("Yono Master Head AI bot running successfully with multi-lingual fuzzy game matching and instant post delivery!");
