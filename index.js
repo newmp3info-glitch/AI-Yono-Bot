@@ -497,93 +497,76 @@ bot.on('channel_post', (msg) => {
     }
 });
 
-function getLatestPostForQuery(userQuery) {
-    if (!postDatabase.all_posts || postDatabase.all_posts.length === 0) {
-        return null;
-    }
+async function handleUserQuery(chatId, queryText) {
+    try {
+        await bot.sendChatAction(chatId, 'typing');
 
-    const cleanQuery = userQuery.trim().toLowerCase();
-    if (cleanQuery.includes('free fire') || cleanQuery.includes('pubg') || cleanQuery.includes('ludo') || cleanQuery.includes('ff max')) {
-        return null;
-    }
-
-    const words = cleanQuery.split(/\s+/);
-    if (words.length > 4) {
-        return null;
-    }
-
-    if (cleanQuery.length < 2) return null;
-
-    let queryClean = cleanQuery.replace(/[^\p{L}\p{N}\s]/gu, '').trim();
-    if (!queryClean) return null;
-
-    let matchedPost = null;
-    let highestScore = 0;
-
-    postDatabase.all_posts.forEach(post => {
-        if (!post.text) return;
-        let lowerText = post.text.toLowerCase();
-        
-        let firstLine = lowerText.split('\n')[0].replace(/[^\p{L}\p{N}\s]/gu, '').trim();
-        if (!firstLine) return;
-
-        let score = 0;
-        if (firstLine === queryClean || firstLine.startsWith(queryClean + ' ')) {
-            score = 100;
-        } else if (firstLine.includes(queryClean)) {
-            score = 80;
-        } else {
-            let matchCount = 0;
-            let queryWords = queryClean.split(/\s+/);
-            queryWords.forEach(qw => {
-                if (qw.length > 1 && firstLine.includes(qw)) {
-                    matchCount++;
+        let availableGames = [];
+        if (postDatabase.all_posts && postDatabase.all_posts.length > 0) {
+            postDatabase.all_posts.forEach(p => {
+                if (p.text) {
+                    let firstLine = p.text.split('\n')[0].replace(/<[^>]*>/g, '').trim();
+                    if (firstLine && !availableGames.includes(firstLine)) {
+                        availableGames.push(firstLine);
+                    }
                 }
             });
-            if (matchCount > 0) {
-                score = 50 + (matchCount * 15);
-            }
         }
 
-        if (score > highestScore) {
-            highestScore = score;
-            matchedPost = post;
-        }
-    });
+        let matchedGameName = null;
 
-    return highestScore >= 70 ? matchedPost : null;
-}
+        if (availableGames.length > 0) {
+            const matchPrompt = `You are an AI assistant for Yono Master Gaming. 
+            User message: "${queryText}"
+            Available games in database: ${JSON.stringify(availableGames)}
+            
+            Task: Determine if the user is asking for one of the available games from the list (regardless of language like Bengali, Hindi, English, phonetic spelling, or asking for codes/links). 
+            If it matches one of the games, output EXACTLY the game name from the list. 
+            If it does not match any game, output "NONE". Do not include any extra text.`;
 
-async function handleUserQuery(chatId, queryText) {
-    let foundPost = getLatestPostForQuery(queryText);
-
-    if (foundPost) {
-        await sendSingleMessage(chatId, foundPost.text, foundPost.photo, foundPost.replyMarkup);
-    } else {
-        try {
-            await bot.sendChatAction(chatId, 'typing');
-
-            const completion = await groq.chat.completions.create({
-                messages: [
-                    { role: "system", content: getSystemPrompt() },
-                    { role: "user", content: queryText }
-                ],
+            const matchCompletion = await groq.chat.completions.create({
+                messages: [{ role: "user", content: matchPrompt }],
                 model: "llama-3.3-70b-versatile",
+                temperature: 0.1,
             });
 
-            let aiReply = completion.choices[0]?.message?.content;
-            
-            if (!aiReply) {
-                aiReply = "You will not find any games, apps, or promo codes from any other company here. All games and VIP promo codes belong exclusively to our own Yono Master Gaming company! Please send your favorite game name.";
+            let aiMatchResult = matchCompletion.choices[0]?.message?.content?.trim();
+            if (aiMatchResult && aiMatchResult !== "NONE" && availableGames.includes(aiMatchResult)) {
+                matchedGameName = aiMatchResult;
             }
-
-            await sendSingleMessage(chatId, aiReply, null, null);
-
-        } catch (aiErr) {
-            console.error("Groq AI Error:", aiErr.message);
-            let fallbackMessage = "You will not find any games, apps, or promo codes from any other company here. All games and VIP promo codes belong exclusively to our own Yono Master Gaming company! Please send your favorite game name.";
-            await sendSingleMessage(chatId, fallbackMessage, null, null);
         }
+
+        if (matchedGameName) {
+            let foundPost = postDatabase.all_posts.find(p => {
+                let firstLine = p.text.split('\n')[0].replace(/<[^>]*>/g, '').trim();
+                return firstLine === matchedGameName;
+            });
+            if (foundPost) {
+                await sendSingleMessage(chatId, foundPost.text, foundPost.photo, foundPost.replyMarkup);
+                return;
+            }
+        }
+
+        const completion = await groq.chat.completions.create({
+            messages: [
+                { role: "system", content: getSystemPrompt() },
+                { role: "user", content: queryText }
+            ],
+            model: "llama-3.3-70b-versatile",
+        });
+
+        let aiReply = completion.choices[0]?.message?.content;
+        
+        if (!aiReply) {
+            aiReply = "You will not find any games, apps, or promo codes from any other company here. All games and VIP promo codes belong exclusively to our own Yono Master Gaming company! Please send your favorite game name.";
+        }
+
+        await sendSingleMessage(chatId, aiReply, null, null);
+
+    } catch (aiErr) {
+        console.error("Groq AI Error:", aiErr.message);
+        let fallbackMessage = "You will not find any games, apps, or promo codes from any other company here. All games and VIP promo codes belong exclusively to our own Yono Master Gaming company! Please send your favorite game name.";
+        await sendSingleMessage(chatId, fallbackMessage, null, null);
     }
 }
 
@@ -745,4 +728,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Head AI bot running successfully with language matching and 4-message automatic deletion limit!");
+console.log("Yono Master Head AI bot running successfully with AI multilingual game matching, language support, and 4-message limit!");
