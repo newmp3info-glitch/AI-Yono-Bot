@@ -460,13 +460,13 @@ async function handleUserQuery(chatId, queryText) {
             return;
         }
 
-        // ২. বাকি সমস্ত সাধারণ চ্যাট ও প্রশ্নের উত্তর Groq AI দিয়ে ডায়নামিক এবং ব্যবহারকারীর নিজস্ব ভাষাতেই দেওয়া হবে
+        // ২. Groq AI দিয়ে ডায়নামিক এবং ব্যবহারকারীর নিজস্ব ভাষাতে উত্তর জেনারেট করা (সঠিক মডেল ব্যবহার করা হয়েছে)
         const aiResponse = await groq.chat.completions.create({
             messages: [
                 { role: "system", content: getSystemPrompt(queryText) },
                 { role: "user", content: queryText }
             ],
-            model: "llama-3.3-70b-versatile",
+            model: "llama-3.1-70b-versatile",
             temperature: 0.7,
         });
 
@@ -479,7 +479,6 @@ async function handleUserQuery(chatId, queryText) {
 
     } catch (aiErr) {
         console.error("Groq AI Error:", aiErr.message);
-        // কোনো এরর হলেও যেন বট চুপ না থাকে, তাই একটি ফলব্যাক মেসেজ পাঠানো হচ্ছে
         await sendSingleMessage(chatId, "Welcome to Yono Gaming Head AI! Please type your favorite game name to get instant promo codes and download links exclusively from us!", null, null);
     }
 }
@@ -580,7 +579,6 @@ bot.on('message', async (msg) => {
 
     if (msg.text) {
         if (msg.text.startsWith('/start')) {
-            // হোমস্ক্রিন বা /start কমান্ডের জন্য ফিক্সড ওয়েলকাম বার্তা
             let upcomingList = getUpcomingGames();
             let upcomingText = "";
             if (upcomingList.length > 0) {
@@ -595,10 +593,9 @@ bot.on('message', async (msg) => {
             
             await sendSingleMessage(chatId, welcomeText, null, null);
         } else {
-            // গেমের নাম হলে পোস্ট পাঠানো এবং বাকি সব চ্যাটে এআই দিয়ে ডায়নামিক উত্তর দেওয়া
             await handleUserQuery(chatId, msg.text);
         }
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully with fully fixed AI replies and promotional logic!");
+console.log("Yono Gaming Head AI bot running successfully with fully fixed AI model and promotional logic!");
