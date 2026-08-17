@@ -8,7 +8,7 @@ import cron from 'node-cron';
 const token = process.env.BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const GROQ_API_KEY = process.env.GROQ_API_KEY || process.env.OPENROUTER_API_KEY;
 
 const TARGET_CHANNEL = '@VipYonoFreeCode';
 const POSTS_FILE = 'posts.json';
@@ -456,19 +456,18 @@ async function handleUserQuery(chatId, queryText) {
                 await sendSingleMessage(chatId, matchedPost.text, matchedPost.photo, matchedPost.replyMarkup);
                 return;
             } else {
-                // যদি গেম চেনা যায় কিন্তু পোস্ট সেভ করা না থাকে, তবে এআই অত্যন্ত আকর্ষণীয় ও সুন্দরভাবে উত্তর দেবে
                 aiPromptText = `The user asked for our official game "${matchedGameObj.name}", but we haven't posted its promo code yet. Please enthusiastically greet them, tell them that ${matchedGameObj.name} is an amazing game created by Yono Gaming, and exclusive promo codes/links will be updated very soon!`;
             }
         }
 
-        const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST",
             headers: {
-                "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+                "Authorization": `Bearer ${GROQ_API_KEY}`,
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "google/gemini-2.0-flash-lite-preview:free",
+                model: "llama-3.3-70b-versatile",
                 messages: [
                     { role: "system", content: getSystemPrompt(queryText) },
                     { role: "user", content: aiPromptText }
@@ -487,8 +486,8 @@ async function handleUserQuery(chatId, queryText) {
         }
 
     } catch (aiErr) {
-        console.error("OpenRouter AI Error:", aiErr.message);
-        await sendSingleMessage(chatId, `⚠️ AI Connection Notice: Please make sure your <code>OPENROUTER_API_KEY</code> is correctly added in Render Environment Variables.`, null, null);
+        console.error("Groq AI Error:", aiErr.message);
+        await sendSingleMessage(chatId, `⚠️ AI Connection Notice: Please make sure your <code>GROQ_API_KEY</code> is correctly added in Render Environment Variables.`, null, null);
     }
 }
 
@@ -571,4 +570,4 @@ bot.on('message', async (msg) => {
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully with OpenRouter!");
+console.log("Yono Gaming Head AI bot running successfully with Groq!");
