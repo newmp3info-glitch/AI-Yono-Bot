@@ -124,15 +124,13 @@ function getSystemPrompt(userQuery) {
         ? "CURRENT UPCOMING GAMES LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n')
         : "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled.";
 
-    let gameNamesList = OFFICIAL_COMPANY_GAMES.map(g => g.name).join(', ');
-
-    return `You are "Yono Gaming Head AI", the official, friendly, and exclusive AI assistant for Yono Gaming company.
+    return `You are "Yono Gaming Head AI", the official and professional AI assistant for Yono Gaming company.
 
 CRITICAL RULES YOU MUST FOLLOW STRICTLY:
 1. **STRICT LANGUAGE & SCRIPT MATCHING**: The user wrote: "${userQuery}". Detect the exact language and script of this message and reply **100% in that exact same language and script**.
-2. **NO FAKE PROMO CODES / NO FAKE LINKS**: **UNDER NO CIRCUMSTANCES ARE YOU ALLOWED TO INVENT, GENERATE, OR MAKE UP ANY PROMO CODES, COUPONS, OR LINKS.** You do not have the ability to create promo codes. 
-3. **ONLY ASK FOR CORRECT GAME NAMES**: If the user sends a random word, greeting, or a game name that is not recognized, warmly welcome them, tell them about our amazing Yono games, and politely ask them to send the **exact correct name** of our official game to get real verified promo codes and download links.
-4. **OFFICIAL GAMES LIST**: Our official company games are: [${gameNamesList}].
+2. **NO GAME LISTS UNDER ANY CIRCUMSTANCES**: If the user asks what games are available, what games the company has, or asks for a list of games, **DO NOT PROVIDE ANY LIST OF GAMES**. Never list or name games in bulk. Instead, professionally tell them to type the exact name of the specific game they want to access to get its promo code and download link.
+3. **NO COMEDY, NO JOKES, NO FLUFF**: Maintain a strict, professional, formal, and direct tone. Do not use any comedy, jokes, casual fluff, or refer to games as "fun games". 
+4. **NO FAKE PROMO CODES / NO FAKE LINKS**: Under no circumstances are you allowed to invent, generate, or make up any promo codes, coupons, or links.
 5. **MANDATORY BOT ANNOUNCEMENT SIGNATURE**: At the very end of your response, you MUST always include the following official bot announcement translated 100% accurately into the user's language and script:
 "🤖 Official Bot Announcement:
 
@@ -470,7 +468,7 @@ async function handleUserQuery(chatId, queryText) {
         if (aiReply) {
             await sendSingleMessage(chatId, aiReply, null, null);
         } else {
-            await sendSingleMessage(chatId, "Hello! I am your Yono Gaming Assistant. Send your favorite official game name for instant promo codes!", null, null);
+            await sendSingleMessage(chatId, "Hello! Please send the exact official game name to get promo codes.", null, null);
         }
 
     } catch (aiErr) {
@@ -496,7 +494,7 @@ bot.on('message', async (msg) => {
     }
 
     if (msg.voice || msg.audio) {
-        await sendSingleMessage(chatId, "Please type your favorite game name to get instant promo codes!", null, null);
+        await sendSingleMessage(chatId, "Please type your official game name to get promo codes!", null, null);
         return;
     }
 
@@ -546,10 +544,9 @@ bot.on('message', async (msg) => {
                 upcomingText = `<b>Upcoming Games:</b>\n${listStr}\n\n`;
             }
             
-            const welcomeText = `<b>Welcome to Yono Gaming Head AI! 💖</b>\n\n` +
-                `👑 Hello! I am official gaming AI assistant. Ask me anything in your language or send your favorite official game name for instant promo codes!\n\n` +
+            const welcomeText = `<b>Welcome to Yono Gaming Head AI!</b>\n\n` +
+                `👑 Hello! I am the official AI assistant. Please send the exact name of your official game to receive verified promo codes and download links.\n\n` +
                 upcomingText +
-                `🎮 <b>Send your favorite official game name right now to get instant download links and real promo codes!</b>\n\n` +
                 `🤖 <b>Official Bot Announcement:</b>\n\nRemember, all our official new games and new promo codes are created directly by Yono Gaming Head AI! Once generated, these new promo codes are instantly activated across all games. 🚀`;
             
             await sendSingleMessage(chatId, welcomeText, null, null);
