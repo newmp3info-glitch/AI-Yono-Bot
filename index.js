@@ -87,7 +87,6 @@ if (!fs.existsSync(UPCOMING_FILE)) {
     fs.writeFileSync(UPCOMING_FILE, JSON.stringify([], null, 2));
 }
 
-// সকাল ৮টা টাইম সেট করে এক্সপায়ারি ক্যালকুলেট করা
 function parseUpcomingExpiry(dateStr) {
     try {
         let parts = dateStr.trim().split('/');
@@ -695,7 +694,7 @@ Rules:
 
     } catch (aiErr) {
         console.error("Groq AI Error:", aiErr.message);
-        let fallbackMessage = "Welcome to Yono Master Gaming! All our games and promo codes are created directly by us.";
+        let fallbackMessage = `<b>🤖 Yono Master Gaming AI Response:</b>\n\nI received your message: "<i>${queryText}</i>"\n\n👑 Remember, all our official games and promo codes are created directly by <b>Yono Master Gaming</b>!`;
         await sendSingleMessage(chatId, fallbackMessage, null, null);
     }
 }
@@ -771,13 +770,15 @@ bot.on('message', async (msg) => {
         }
     }
 
-    if (msg.text && msg.text.startsWith('/comingsoon')) {
+    // এখানে /comingsoon এবং ভুল বানান /cominsoon দুটোই হ্যান্ডেল করা হয়েছে
+    if (msg.text && (msg.text.startsWith('/comingsoon') || msg.text.startsWith('/cominsoon'))) {
         if (!ADMIN_CHAT_ID || chatId !== ADMIN_CHAT_ID) {
             await bot.sendMessage(chatId, `❌ <b>Access Denied!</b>\n\nYou are not authorized to use this command. Only the admin can set upcoming games!`, { parse_mode: "HTML" });
             return;
         }
 
-        let parts = msg.text.replace('/comingsoon', '').split('|');
+        let cleanText = msg.text.replace('/comingsoon', '').replace('/cominsoon', '').trim();
+        let parts = cleanText.split('|');
         if (parts.length === 2) {
             let gameName = parts[0].trim();
             let gameDate = parts[1].trim();
