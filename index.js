@@ -485,14 +485,23 @@ async function handleUserQuery(chatId, queryText) {
             let matchedPost = postDatabase.all_posts.find(p => {
                 let firstLine = p.text.split('\n')[0].replace(/<[^>]*>/g, '').trim().toLowerCase();
                 let rawLower = p.rawText.toLowerCase();
-                return firstLine.includes(matchedGameObj.name.toLowerCase()) || rawLower.includes(matchedGameObj.name.toLowerCase());
+                
+                let normFirstLine = firstLine.replace(/[\s._-]/g, '');
+                let normRawText = rawLower.replace(/[\s._-]/g, '');
+                let normGameName = matchedGameObj.name.toLowerCase().replace(/[\s._-]/g, '');
+
+                let matchesAlias = matchedGameObj.aliases.some(alias => {
+                    let normAlias = alias.toLowerCase().replace(/[\s._-]/g, '');
+                    return normFirstLine.includes(normAlias) || normRawText.includes(normAlias);
+                });
+
+                return normFirstLine.includes(normGameName) || normRawText.includes(normGameName) || matchesAlias;
             });
 
             if (matchedPost) {
                 await sendSingleMessage(chatId, matchedPost.text, matchedPost.photo, matchedPost.replyMarkup);
                 return;
             } else {
-                // গেম চেনা গেছে কিন্তু ডাটাবেজে কোনো পোস্ট নেই - কোনো ফেক কোড জেনারেট হতে দেওয়া হবে না!
                 let notFoundMsg = `⚠️ <b>${matchedGameObj.name} এর কোনো প্রমো কোড বা পোস্ট এই মুহূর্তে আমাদের ডাটাবেজে নেই।</b>\n\nঅনুগ্রহ করে চ্যানেল থেকে পোস্ট ফরওয়ার্ড করে ডাটাবেজে যুক্ত করুন অথবা নতুন কোডের জন্য অপেক্ষা করুন।`;
                 if (/^[a-zA-Z\s]+$/.test(queryText)) {
                     notFoundMsg = `⚠️ <b>No promo code or post is currently available in the database for ${matchedGameObj.name}.</b>\n\nPlease forward the official post from the channel to add it to the database or wait for updates.`;
@@ -671,4 +680,4 @@ bot.on('message', async (msg) => {
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully with Anti-Hallucination & Strict Database Guard!");
+console.log("Yono Gaming Head AI bot running successfully with Robust Space-Insensitive Post Matching!");
