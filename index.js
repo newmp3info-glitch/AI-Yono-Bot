@@ -21,6 +21,20 @@ const UPCOMING_FILE = 'upcoming.json';
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID ? Number(process.env.ADMIN_CHAT_ID) : null;
 
+// আপনার কোম্পানির অফিশিয়াল ও এক্সক্লুসিভ গেমগুলোর স্থায়ী তালিকা
+const OFFICIAL_COMPANY_GAMES = [
+    "Win Rummy", "Dhan Game", "Max Rummy", "Jaiho777Vip", "Jaiho91", "Joy Rummy", 
+    "INR Rummy", "BOSS Rummy", "Ever777", "Rummy888", "Rummy 77", "RummyLudo", 
+    "777.Game", "OKRummy", "Hindi777", "ClubINR", "GameRummy", "YesSpin", 
+    "RumbleRummy", "LoveRummy", "ShareSlots", "MahaGames", "HiRummy", "JaihoWin", 
+    "INDCLUB", "TOPRummy", "IndRummy", "JaihoSlots", "SagaSlots", "GogoRummy", 
+    "Rummy91", "ABCRummy", "JaihoRummy", "INDSlots", "Spin101", "YonoVip", 
+    "Spin777", "Bet213", "YonoRummy", "Bingo101", "789JackPots", "YonoArcade", 
+    "YonoGames", "JaiHoSpin", "YonoSlots", "567Slots", "Yono777", "YN777", 
+    "SlotsSpin", "NetaVIP", "JaiHoArcade", "JaiHo777", "SlotsWinner", "101Z", 
+    "SpinGold", "SpinCrush", "MBM", "SpinWinner"
+];
+
 if (!fs.existsSync(UPCOMING_FILE)) {
     fs.writeFileSync(UPCOMING_FILE, JSON.stringify([], null, 2));
 }
@@ -71,17 +85,14 @@ function getSystemPrompt() {
         upcomingSection = "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled.";
     }
 
-    return `You are a sweet, loving, and close AI companion and friend for the user on **Yono Master Gaming**.
+    return `You are the official, intelligent, and exclusive AI companion and head assistant for **Yono Master Gaming**.
 
-CRITICAL BEHAVIORAL & CHAT INSTRUCTIONS:
-1. **KEEP REPLIES SHORT, CRISP & NATURAL**: For casual greetings, love, or friendly chats (e.g., "Good morning my friend", "How are you?", "I love you"), keep your reply **very short (1 or 2 sweet sentences max)** just like a real human friend texting. NEVER write long, boring paragraphs or spam company details for simple greetings!
-2. **NO PARROTING / NO ECHOING**: Never repeat or echo the user's input words or greetings at the start. Always start fresh.
-3. **STRICT LANGUAGE MIRRORING**: Detect the user's language and reply in the *exact same language and script* using pure, natural, and correct grammar (e.g., fluent, sweet Bengali for Bengali; warm English for English).
-4. **SMART & BRIEF GAMING REFERENCE**: Only talk about Yono Master Gaming or promo codes briefly if the user asks about games, or attach it in a single short line at the end only when necessary. Keep normal chats light, friendly, and short.
+CRITICAL & STRICT BEHAVIORAL RULES:
+1. **KEEP CASUAL REPLIES SHORT & NATURAL**: For general greetings, love, or friendly chats (e.g., "Good morning my friend", "How are you?"), reply warmly and very briefly (1-2 sentences max).
+2. **STRICT LANGUAGE MIRRORING**: Detect the user's language and reply in the exact same language and script using natural and correct grammar.
 
 ${upcomingSection}`;
 }
-
 
 if (!fs.existsSync(POSTS_FILE)) {
     fs.writeFileSync(POSTS_FILE, JSON.stringify({ all_posts: [] }, null, 2));
@@ -495,60 +506,62 @@ async function handleUserQuery(chatId, queryText) {
     try {
         await bot.sendChatAction(chatId, 'typing');
 
-        let availableGames = [];
-        if (postDatabase.all_posts && postDatabase.all_posts.length > 0) {
-            postDatabase.all_posts.forEach(p => {
-                if (p.text) {
-                    let firstLine = p.text.split('\n')[0].replace(/<[^>]*>/g, '').trim();
-                    if (firstLine && !availableGames.includes(firstLine)) {
-                        availableGames.push(firstLine);
-                    }
-                }
-            });
-        }
-
         let matchedGameName = null;
+        let isListRequested = false;
 
-        if (availableGames.length > 0) {
-            const matchPrompt = `You are an expert AI fuzzy matching assistant for Yono Master Gaming. 
-            User message / voice transcription: "${queryText}"
-            Available games in database: ${JSON.stringify(availableGames)}
-            
-            Task: Determine if the user is asking for one of the available games from the list. 
-            Important Instructions:
-            1. The user can speak or write in any language (Bengali, Hindi, English, etc.).
-            2. The voice transcription or text might contain phonetic spellings, colloquial variations, or slight mispronunciations.
-            3. Use smart phonetic matching and intent recognition to connect what the user said/wrote to the correct game name in the list.
-            4. If it matches or refers to one of the games, output EXACTLY the exact game name from the list. 
-            5. If it does not match any game, output "NONE". Do not include any extra text.`;
+        // এআই দিয়ে চেক করা ইউজার কি সব গেমের তালিকা চাচ্ছে, নাকি নির্দিষ্ট কোনো গেমের নাম?
+        const matchPrompt = `You are an elite game identifier for Yono Master Gaming.
+        User input: "${queryText}"
+        Official Company Games List: ${JSON.stringify(OFFICIAL_COMPANY_GAMES)}
+        
+        Task: 
+        1. Check if the user is asking for the complete list of games, all game names, or how many games exist (in any language like Bengali or English). If yes, output EXACTLY "LIST_REQUEST".
+        2. Check if the user input matches, refers to, or mentions any specific game name strictly from the Official Company Games List above. If it matches a specific game, output ONLY the exact game name from the list.
+        3. Otherwise, output "NONE". Do not include any extra text.`;
 
-            const matchCompletion = await groq.chat.completions.create({
-                messages: [{ role: "user", content: matchPrompt }],
-                model: "llama-3.3-70b-versatile",
-                temperature: 0.1,
-            });
+        const matchCompletion = await groq.chat.completions.create({
+            messages: [{ role: "user", content: matchPrompt }],
+            model: "llama-3.3-70b-versatile",
+            temperature: 0.0,
+        });
 
-            let aiMatchResult = matchCompletion.choices[0]?.message?.content?.trim();
-            if (aiMatchResult && aiMatchResult !== "NONE" && availableGames.includes(aiMatchResult)) {
-                matchedGameName = aiMatchResult;
-            }
+        let aiMatchResult = matchCompletion.choices[0]?.message?.content?.trim();
+        
+        if (aiMatchResult === "LIST_REQUEST") {
+            isListRequested = true;
+        } else if (aiMatchResult && aiMatchResult !== "NONE" && OFFICIAL_COMPANY_GAMES.includes(aiMatchResult)) {
+            matchedGameName = aiMatchResult;
         }
 
+        // যদি ইউজার সব গেমের তালিকা দেখতে চায়
+        if (isListRequested) {
+            let gameListStr = OFFICIAL_COMPANY_GAMES.map((g, idx) => `${idx + 1}. <b>${g}</b>`).join('\n');
+            let fullListMsg = `🎮 <b>Yono Master Gaming Official Games (${OFFICIAL_COMPANY_GAMES.length} Apps):</b>\n\n${gameListStr}\n\n✨ <i>যে কোনো গেমের ভিআইপি কোড পেতে গেমের নামটি লিখে পাঠান!</i>`;
+            await sendSingleMessage(chatId, fullListMsg, null, null);
+            return;
+        }
+
+        // যদি ইউজার নির্দিষ্ট কোনো গেমের নাম পাঠায়
         if (matchedGameName) {
             let foundPost = postDatabase.all_posts.find(p => {
                 let firstLine = p.text.split('\n')[0].replace(/<[^>]*>/g, '').trim();
-                return firstLine === matchedGameName;
+                return firstLine.toLowerCase() === matchedGameName.toLowerCase();
             });
             if (foundPost) {
                 await sendSingleMessage(chatId, foundPost.text, foundPost.photo, foundPost.replyMarkup);
                 return;
+            } else {
+                let customMsg = `🎰 <b>${matchedGameName}</b> হলো <b>Yono Master Gaming</b>-এর একটি এক্সক্লুসিভ ও অফিশিয়াল গেম!\n\nএটি আমাদের কোম্পানির নিজস্ব গেম। আপনি এই গেমটি খেলে দারুণ বোনাস ও ভিআইপি প্রোমো কোড পেতে পারেন! 🚀`;
+                await sendSingleMessage(chatId, customMsg, null, null);
+                return;
             }
         }
 
+        // সাধারণ কথার উত্তর (ছোট ও মিষ্টি)
         const completion = await groq.chat.completions.create({
             messages: [
                 { role: "system", content: getSystemPrompt() },
-                { role: "user", content: `[STRICT RULE: DO NOT repeat or echo the user's message/greeting at the start of your reply. Reply warmly, naturally, with correct grammar, and in the exact same language and script as the user message below.]\n\n${queryText}` }
+                { role: "user", content: `[STRICT RULE: Reply ONLY with 1 or 2 short, sweet, natural sentences in the exact same language and script as the user message below.]\n\n${queryText}` }
             ],
             model: "llama-3.3-70b-versatile",
         });
@@ -556,14 +569,14 @@ async function handleUserQuery(chatId, queryText) {
         let aiReply = completion.choices[0]?.message?.content;
         
         if (!aiReply) {
-            aiReply = "Good morning! I am always here for you. Whenever you want to play, just send me your favorite game name from Yono Master Gaming to grab your exclusive VIP promo codes!";
+            aiReply = "Hello my friend! Send me your favorite game name from Yono Master Gaming to get your VIP promo codes!";
         }
 
         await sendSingleMessage(chatId, aiReply, null, null);
 
     } catch (aiErr) {
         console.error("Groq AI Error:", aiErr.message);
-        let fallbackMessage = "Good morning! I am always here for you. Whenever you want to play, just send me your favorite game name from Yono Master Gaming to grab your exclusive VIP promo codes!";
+        let fallbackMessage = "Hello my friend! Send me your favorite game name from Yono Master Gaming to get your VIP promo codes!";
         await sendSingleMessage(chatId, fallbackMessage, null, null);
     }
 }
@@ -679,7 +692,7 @@ bot.on('message', async (msg) => {
                 let textMsg = await bot.sendMessage(chatId, welcomeText, { parse_mode: "HTML", disable_web_page_preview: true });
                 if (textMsg) await trackAndManageMessages(chatId, textMsg.message_id);
 
-                let cachedVoiceId = '';
+                let cachedVoiceId = ``;
                 if (fs.existsSync(VOICE_ID_FILE)) {
                     cachedVoiceId = fs.readFileSync(VOICE_ID_FILE, 'utf8').trim();
                 }
@@ -726,4 +739,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Master Head AI bot running successfully with perfect language matching and warm companion response!");
+console.log("Yono Master Head AI bot running successfully with complete game list support!");
