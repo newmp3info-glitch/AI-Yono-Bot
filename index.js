@@ -607,6 +607,43 @@ Rules:
     }
 }
 
+// ইউজার ভয়েস মেসেজ পাঠালে তা রিসিভ ও ট্রান্সক্রাইব করার সিস্টেম
+async function handleVoiceMessage(msg) {
+    const chatId = msg.chat.id;
+    try {
+        await bot.sendChatAction(chatId, 'typing');
+        const fileId = msg.voice ? msg.voice.file_id : msg.audio.file_id;
+        const fileLink = await bot.getFileLink(fileId);
+        
+        const fileName = `voice_${chatId}_${Date.now()}.ogg`;
+        const filePath = path.join(process.cwd(), fileName);
+        
+        const response = await fetch(fileLink);
+        if (!response.ok) throw new Error("Failed to download voice file");
+        const buffer = Buffer.from(await response.arrayBuffer());
+        fs.writeFileSync(filePath, buffer);
+
+        const transcription = await groq.audio.transcriptions.create({
+            file: fs.createReadStream(filePath),
+            model: "whisper-large-v3",
+        });
+
+        setTimeout(() => {
+            if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }, 5000);
+
+        const transcribedText = transcription.text;
+        if (transcribedText && transcribedText.trim().length > 0) {
+            await handleUserQuery(chatId, transcribedText);
+        } else {
+            await sendSingleMessage(chatId, "Could not understand your voice message. Please send the game name by typing.", null, null);
+        }
+    } catch (e) {
+        console.error("Voice transcription error:", e);
+        await sendSingleMessage(chatId, "Sorry, voice processing failed. Please type the game name.", null, null);
+    }
+}
+
 cron.schedule('* * * * *', () => {
     getUpcomingGames();
 });
@@ -621,6 +658,12 @@ bot.on('message', async (msg) => {
 
     if (msg.message_id) {
         await trackAndManageMessages(chatId, msg.message_id);
+    }
+
+    // ইউজার ভয়েস মেসেজ পাঠালে সেটি প্রসেস করার জন্য
+    if (msg.voice || msg.audio) {
+        await handleVoiceMessage(msg);
+        return;
     }
 
     if (msg.forward_from_chat) {
@@ -704,4 +747,4 @@ cron.schedule('0 10 * * 0', () => {
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully without audio features and with Global Language Support & Creator Branding!");
+console.log("Yono Gaming Head AI bot running successfully with Voice Input Support & Creator Branding!");
