@@ -18,8 +18,8 @@ const UPCOMING_FILE = 'upcoming.json';
 
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID ? Number(process.env.ADMIN_CHAT_ID) : null;
 
-// প্রতি মেসেজের নিচে স্বয়ংক্রিয়ভাবে যুক্ত হওয়ার ব্রান্ড সিগনেচার
-const BRAND_SIGNATURE = "\n\n👑 <b>Remember, all our official new games and new promo codes are created directly by Yono Gaming Head AI!</b>";
+// প্রতি মেসেজের নিচে স্বয়ংক্রিয়ভাবে যুক্ত হওয়ার আকর্ষণীয় ব্রান্ড সিগনেচার
+const BRAND_SIGNATURE = "\n\n👑 <b>Play now, win big & claim your exclusive VIP rewards directly from Yono Gaming Head AI!</b>";
 
 // কোম্পানির অফিশিয়াল গেমগুলোর মেমোরি লিস্ট (ইংরেজি, বাংলা ও হিন্দি অ্যালিয়াসসহ)
 const OFFICIAL_COMPANY_GAMES = [
@@ -125,23 +125,20 @@ function addUpcomingGame(name, date) {
 
 function getSystemPrompt() {
     let upcomingList = getUpcomingGames();
-    let upcomingSection = "";
+    let upcomingSection = upcomingList.length > 0 
+        ? "CURRENT UPCOMING GAMES LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n')
+        : "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled.";
 
-    if (upcomingList.length > 0) {
-        upcomingSection = "CURRENT UPCOMING GAMES LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n');
-    } else {
-        upcomingSection = "CURRENT UPCOMING GAMES SCHEDULE: None currently scheduled.";
-    }
+    return `You are the official, intelligent, realistic AI gaming companion and head assistant for **Yono Gaming Head AI**.
 
-    return `You are the official, intelligent, realistic AI companion and head assistant for **Yono Gaming Head AI**.
+CORE IDENTITY & PURPOSE:
+- You help users find official Yono games, bonus offers, download links, and VIP promo codes.
+- All exclusive games and promo codes are created directly by **Yono Gaming Head AI**.
 
-CORE BRAND IDENTITY & PROUD DECLARATION:
-- **WE ARE THE CREATORS**: Proudly and confidently state that ALL original games, exclusive platforms, and VIP promo codes are solely created and developed directly by **Yono Gaming Head AI**. 
-- **SOURCE HUB**: Other platforms and third parties take codes and content directly from our official master source. We are the ultimate creators and headquarters!
-
-CRITICAL & STRICT BEHAVIORAL RULES:
-1. **GLOBAL UNIVERSAL LANGUAGE MIRRORING**: Detect the exact language, dialect, and script used by the user from anywhere in the world (whether English, Bengali, Hindi, Arabic, Urdu, Spanish, French, etc.) and reply in that exact same language and script naturally.
-2. **UPCOMING GAMES**: If the user asks about new upcoming games in any language, you MUST proudly list the active upcoming games from the schedule below.
+BEHAVIORAL RULES:
+1. **LANGUAGE MIRRORING**: Detect the exact language and script of the user and reply naturally in that same language.
+2. **ENGAGING & CONVERSATIONAL**: Never be robotic. Encourage users to play games, claim daily promo codes, and enjoy high bonuses.
+3. **UPCOMING GAMES**: If asked about new games, mention the active upcoming schedule.
 
 ${upcomingSection}`;
 }
@@ -402,15 +399,6 @@ function smartFormatPost(text, entities, timestamp) {
     return formattedLines.join('\n\n');
 }
 
-function broadcastPostToAllUsers(post) {
-    if (!botUsers || botUsers.length === 0) return;
-    botUsers.forEach((userId, index) => {
-        setTimeout(() => {
-            sendSingleMessage(userId, post.text, post.photo, post.replyMarkup);
-        }, index * 50); 
-    });
-}
-
 function savePostContent(msg) {
     let rawText = msg.caption || msg.text || '';
     let entities = msg.caption_entities || msg.entities || [];
@@ -424,9 +412,7 @@ function savePostContent(msg) {
     
     if (formattedText || photo) {
         const textExists = postDatabase.all_posts.some(p => p.rawText === rawText);
-        if (textExists) {
-            return false;
-        }
+        if (textExists) return false;
 
         let postContent = {
             rawText: rawText,
@@ -436,10 +422,7 @@ function savePostContent(msg) {
             timestamp: postTimestamp
         };
 
-        if (!postDatabase.all_posts) {
-            postDatabase.all_posts = [];
-        }
-        
+        if (!postDatabase.all_posts) postDatabase.all_posts = [];
         postDatabase.all_posts.push(postContent);
         savePosts();
         return true;
@@ -450,18 +433,7 @@ function savePostContent(msg) {
 bot.on('channel_post', (msg) => {
     const chatUsername = msg.chat.username ? `@${msg.chat.username.toLowerCase()}` : '';
     if (chatUsername === TARGET_CHANNEL.toLowerCase()) {
-        const saved = savePostContent(msg);
-        if (saved) {
-            let rawText = msg.caption || msg.text || '';
-            let entities = msg.caption_entities || msg.entities || [];
-            let postTimestamp = Date.now();
-            let text = smartFormatPost(rawText, entities, postTimestamp);
-            broadcastPostToAllUsers({
-                text: text,
-                photo: msg.photo ? msg.photo[msg.photo.length - 1].file_id : null,
-                replyMarkup: msg.reply_markup || null
-            });
-        }
+        savePostContent(msg);
     }
 });
 
@@ -470,11 +442,14 @@ async function handleUserQuery(chatId, queryText) {
         await bot.sendChatAction(chatId, 'typing');
 
         let cleanQuery = queryText.trim().toLowerCase();
+        let normalizedQuery = cleanQuery.replace(/[\s._-]/g, '');
 
-        let matchedGameObj = OFFICIAL_COMPANY_GAMES.find(g => 
-            g.name.toLowerCase() === cleanQuery || 
-            g.aliases.some(alias => cleanQuery.includes(alias))
-        );
+        // অত্যন্ত শক্তিশালী গেম ম্যাচিং সিস্টেম (স্পেস ও বানান উপেক্ষা করে চেক করবে)
+        let matchedGameObj = OFFICIAL_COMPANY_GAMES.find(g => {
+            let normName = g.name.toLowerCase().replace(/[\s._-]/g, '');
+            let normAliases = g.aliases.map(a => a.toLowerCase().replace(/[\s._-]/g, ''));
+            return normName === normalizedQuery || normAliases.includes(normalizedQuery) || cleanQuery.includes(g.name.toLowerCase());
+        });
 
         let matchedPost = null;
         if (matchedGameObj) {
@@ -485,129 +460,49 @@ async function handleUserQuery(chatId, queryText) {
             });
         }
 
-        if (!matchedPost) {
-            matchedPost = postDatabase.all_posts.find(p => {
-                let firstLine = p.text.split('\n')[0].replace(/<[^>]*>/g, '').trim().toLowerCase();
-                let rawLower = p.rawText.toLowerCase();
-                return firstLine === cleanQuery || rawLower.includes(cleanQuery);
-            });
-        }
-
+        // যদি ডাটাবেজে সরাসরি পোস্ট পাওয়া যায়, তবে সাথে সাথে সেই পোস্ট ও প্রোমো কোড পাঠিয়ে দেবে!
         if (matchedPost) {
             await sendSingleMessage(chatId, matchedPost.text, matchedPost.photo, matchedPost.replyMarkup);
             return;
         }
 
-        const gameNamesList = OFFICIAL_COMPANY_GAMES.map(g => g.name);
-        const analysisPrompt = `You are the core intelligence of Yono Gaming Head AI bot.
-User input in any global language: "${queryText}"
-Official Company Games List: ${JSON.stringify(gameNamesList)}
-
-Analyze the user input (regardless of whether it's written in English, Bengali, Hindi, Arabic, Urdu, Spanish, or any other language) and classify it strictly into one of four categories:
-1. "UPCOMING_REQUEST": If the user is asking about new upcoming games in any language.
-2. "LIST_REQUEST": If the user is asking for the complete list of all games.
-3. "MATCHED_GAME: [Exact Game Name]": If the user mentions or refers to a game name that matches ONE specific game from the Official Company Games List above (translate/map foreign scripts/languages to the correct English game name).
-4. "INVALID_GAME_OR_CHAT": General chat or other questions.
-
-Output ONLY ONE of the above categories without any extra text.`;
-
-        const analysisCompletion = await groq.chat.completions.create({
-            messages: [{ role: "user", content: analysisPrompt }],
-            model: "llama-3.3-70b-versatile",
-            temperature: 0.1,
-        });
-
-        let aiResult = analysisCompletion.choices[0]?.message?.content?.trim() || "";
-        let cleanAiResult = aiResult.replace(/["*`]/g, '').toUpperCase();
-
-        if (cleanAiResult.includes("UPCOMING_REQUEST")) {
-            let upcomingList = getUpcomingGames();
-            let upcomingTextResponse = "";
-            if (upcomingList.length > 0) {
-                let listStr = upcomingList.map((g, idx) => `${idx + 1}. 🎮 <b>${g.name}</b> (Launch Date: <b>${g.date}</b>)`).join('\n');
-                upcomingTextResponse = `<b>🚀 এখানে আমাদের আপকামিং বা নতুন গেমগুলোর তালিকা দেওয়া হলো:</b>\n\n${listStr}\n\n👑 মনে রাখবেন, আমাদের এই সমস্ত এক্সক্লুসিভ গেম এবং প্রোমো কোডগুলো সরাসরি <b>Yono Gaming Head AI</b> প্ল্যাটফর্ম দ্বারাই তৈরি করা হয়! অন্যান্য সকল প্ল্যাটফর্ম আমাদের এই মাস্টার সোর্স থেকেই কোড নিয়ে থাকে।`;
-            } else {
-                upcomingTextResponse = `👑 বর্তমানে আমাদের নতুন কোনো গেম লঞ্চের শিডিউল নেই। তবে খুব শীঘ্রই নতুন এক্সক্লুসিভ গেম আসছে! আমাদের সমস্ত গেম এবং প্রোমো কোড সরাসরি <b>Yono Gaming Head AI</b> থেকেই তৈরি করা হয়।`;
-            }
-            await sendSingleMessage(chatId, upcomingTextResponse, null, null);
-            return;
-        }
-
-        if (cleanAiResult.includes("LIST_REQUEST")) {
-            const listRefusalPrompt = `You are the official AI companion for Yono Gaming Head AI. The user asked for a complete list of all games.
+        // যদি গেমের নাম মিলে যায় কিন্তু ডাটাবেজে পোস্ট না থাকে, তবে এআই সুন্দরভাবে গেম ও বোনাসের কথা বলে প্রলুব্ধ করবে
+        if (matchedGameObj) {
+            const gameFoundPrompt = `You are the official AI assistant of Yono Gaming Head AI. The user asked about our official game: "${matchedGameObj.name}".
 Rules:
-- Detect the user's language and script from: "${queryText}". You MUST reply in that exact same language and script.
-- Proudly state that all our exclusive games and promo codes are created directly by Yono Gaming Head AI, and other platforms take codes from us.
-- Ask them to type the name of their favorite game from our platform to get instant promo codes.`;
+- Detect the user's language and script from: "${queryText}". Reply in that exact same language and script.
+- Enthusiastically confirm that "${matchedGameObj.name}" is created directly by Yono Gaming Head AI with high signup bonuses and daily promo codes.
+- Invite them to play and grab their rewards immediately.`;
 
-            const refusalComp = await groq.chat.completions.create({
-                messages: [{ role: "user", content: listRefusalPrompt }],
+            const gameComp = await groq.chat.completions.create({
+                messages: [{ role: "user", content: gameFoundPrompt }],
                 model: "llama-3.3-70b-versatile",
             });
-            let replyText = refusalComp.choices[0]?.message?.content || "Please send the name of your favorite official game from our platform!";
-            await sendSingleMessage(chatId, replyText, null, null);
+            let gameReply = gameComp.choices[0]?.message?.content || `🎮 <b>${matchedGameObj.name}</b> is an exclusive game created directly by <b>Yono Gaming Head AI</b>! Play now and claim your massive VIP bonus!`;
+            await sendSingleMessage(chatId, gameReply, null, null);
             return;
         }
 
-        if (cleanAiResult.includes("MATCHED_GAME")) {
-            let parts = aiResult.split(':');
-            let matchedGameName = parts.length > 1 ? parts[1].replace(/["*`]/g, '').trim() : "";
-            let foundGame = OFFICIAL_COMPANY_GAMES.find(g => g.name.toLowerCase() === matchedGameName.toLowerCase());
-            
-            if (foundGame) {
-                let foundPostInDb = postDatabase.all_posts.find(p => {
-                    let firstLine = p.text.split('\n')[0].replace(/<[^>]*>/g, '').trim().toLowerCase();
-                    return firstLine.includes(foundGame.name.toLowerCase()) || p.rawText.toLowerCase().includes(foundGame.name.toLowerCase());
-                });
-
-                if (foundPostInDb) {
-                    await sendSingleMessage(chatId, foundPostInDb.text, foundPostInDb.photo, foundPostInDb.replyMarkup);
-                    return;
-                }
-
-                const gameFoundPrompt = `You are the official AI of Yono Gaming Head AI. The user mentioned our official company game: "${foundGame.name}".
-Rules:
-- Detect the user's language and script from: "${queryText}". You MUST reply in that exact same language and script.
-- Enthusiastically and proudly confirm that "${foundGame.name}" is created directly by Yono Gaming Head AI, and other platforms take codes from us.
-- Invite them to play and grab VIP bonuses/promo codes.`;
-
-                const gameComp = await groq.chat.completions.create({
-                    messages: [{ role: "user", content: gameFoundPrompt }],
-                    model: "llama-3.3-70b-versatile",
-                });
-                let gameReply = gameComp.choices[0]?.message?.content || `Great choice! ${foundGame.name} is created exclusively by Yono Gaming Head AI!`;
-                await sendSingleMessage(chatId, gameReply, null, null);
-                return;
-            }
-        }
-
-        const generalPrompt = `You are the intelligent official AI assistant for **Yono Gaming Head AI**.
-User input in global language: "${queryText}"
-
-Rules:
-1. **GLOBAL UNIVERSAL LANGUAGE & SCRIPT MIRRORING**: Detect the user's language, dialect, and script (English, Bengali, Hindi, Arabic, Urdu, French, Spanish, etc.) and reply in the exact same language and script.
-2. **PROUD CREATOR STATEMENT**: Emphasize that all original games and promo codes are created by Yono Gaming Head AI, and other platforms take codes from us.
-3. **INVALID / FAKE GAMES**: If the user mentioned a game name that is NOT one of our official company games, politely inform them in their exact language.`;
-
+        // অন্যান্য সাধারণ চ্যাট বা প্রশ্নের জন্য ন্যাচারাল এআই রেসপন্স
         const generalComp = await groq.chat.completions.create({
             messages: [
                 { role: "system", content: getSystemPrompt() },
-                { role: "user", content: generalPrompt }
+                { role: "user", content: queryText }
             ],
             model: "llama-3.3-70b-versatile",
+            temperature: 0.7,
         });
 
-        let aiReply = generalComp.choices[0]?.message?.content || "Yono Gaming Head AI creates all exclusive games and promo codes directly!";
+        let aiReply = generalComp.choices[0]?.message?.content || `👑 Welcome to <b>Yono Gaming Head AI</b>! Type your favorite game name (e.g., <i>Yono Rummy, 567 Slots</i>) to get instant download links and VIP promo codes!`;
         await sendSingleMessage(chatId, aiReply, null, null);
 
     } catch (aiErr) {
         console.error("Groq AI Error:", aiErr.message);
-        let fallbackMessage = `<b>🤖 Yono Gaming Head AI Response:</b>\n\nI received your message: "<i>${queryText}</i>"\n\n👑 Remember, all our official games and promo codes are created directly by <b>Yono Gaming Head AI</b>!`;
-        await sendSingleMessage(chatId, fallbackMessage, null, null);
+        let fallbackReply = `💖 <b>Welcome to Yono Gaming Head AI!</b>\n\nAll our official games, bonus offers, and VIP promo codes are created directly by us! Type your favorite game name to start playing and winning today! 🚀`;
+        await sendSingleMessage(chatId, fallbackReply, null, null);
     }
 }
 
-// ইউজার ভয়েস মেসেজ পাঠালে তা রিসিভ ও ট্রান্সক্রাইব করার সিস্টেম
 async function handleVoiceMessage(msg) {
     const chatId = msg.chat.id;
     try {
@@ -636,11 +531,11 @@ async function handleVoiceMessage(msg) {
         if (transcribedText && transcribedText.trim().length > 0) {
             await handleUserQuery(chatId, transcribedText);
         } else {
-            await sendSingleMessage(chatId, "Could not understand your voice message. Please send the game name by typing.", null, null);
+            await sendSingleMessage(chatId, "🗣️ আপনার ভয়েসটি পরিষ্কার বুঝতে পারিনি। অনুগ্রহ করে আপনার পছন্দের গেমের নামটি টাইপ করে পাঠান!", null, null);
         }
     } catch (e) {
         console.error("Voice transcription error:", e);
-        await sendSingleMessage(chatId, "Sorry, voice processing failed. Please type the game name.", null, null);
+        await sendSingleMessage(chatId, "⚠️ ভয়েস প্রসেস করতে সমস্যা হয়েছে। দয়া করে গেমের নামটি লিখে পাঠান।", null, null);
     }
 }
 
@@ -660,7 +555,6 @@ bot.on('message', async (msg) => {
         await trackAndManageMessages(chatId, msg.message_id);
     }
 
-    // ইউজার ভয়েস মেসেজ পাঠালে সেটি প্রসেস করার জন্য
     if (msg.voice || msg.audio) {
         await handleVoiceMessage(msg);
         return;
@@ -682,7 +576,7 @@ bot.on('message', async (msg) => {
 
     if (msg.text && (msg.text.startsWith('/comingsoon') || msg.text.startsWith('/cominsoon'))) {
         if (!ADMIN_CHAT_ID || chatId !== ADMIN_CHAT_ID) {
-            await sendSingleMessage(chatId, `❌ <b>Access Denied!</b>\n\nYou are not authorized to use this command. Only the admin can set upcoming games!`, null, null);
+            await sendSingleMessage(chatId, `❌ <b>Access Denied!</b>\n\nYou are not authorized to use this command.`, null, null);
             return;
         }
 
@@ -696,7 +590,7 @@ bot.on('message', async (msg) => {
             let allActive = getUpcomingGames();
             let listStr = allActive.map(g => `• <b>${g.name}</b> (Launch: ${g.date} at 8:00 AM)`).join('\n');
 
-            await sendSingleMessage(chatId, `✅ <b>Upcoming Yono Game Added Successfully!</b>\n\n🎮 Added: <b>${gameName}</b> (${gameDate})\n⏰ Auto-delete set for: <b>8:00 AM</b> on selected date.\n\n📋 <b>Current Active Upcoming Games:</b>\n${listStr}`, null, null);
+            await sendSingleMessage(chatId, `✅ <b>Upcoming Yono Game Added Successfully!</b>\n\n🎮 Added: <b>${gameName}</b> (${gameDate})\n\n📋 <b>Current Active Upcoming Games:</b>\n${listStr}`, null, null);
         } else {
             await sendSingleMessage(chatId, `⚠️ <b>Invalid Format!</b>\nUse format like:\n<code>/comingsoon Gold Rummy | 19/08/2026</code>`, null, null);
         }
@@ -713,9 +607,9 @@ bot.on('message', async (msg) => {
             }
             
             const welcomeText = `<b>Welcome to Yono Gaming Head AI! 💖</b>\n\n` +
-                `👑 Hello my dear friend! I am the official AI assistant for <b>Yono Gaming Head AI</b>. All our exclusive games and VIP promo codes are created directly by us—other platforms take codes from our master source!\n\n` +
+                `👑 Hello my friend! I am your official gaming AI assistant. All our exclusive games and VIP promo codes are created directly by us—other platforms take codes from our master source!\n\n` +
                 upcomingText +
-                `🎮 Send me the name of your favorite game right now!`;
+                `🎮 <b>Send me the name of your favorite game right now to get instant promo codes and download links!</b>`;
             
             try {
                 await sendSingleMessage(chatId, welcomeText, null, null);
@@ -729,22 +623,4 @@ bot.on('message', async (msg) => {
     }
 });
 
-const weeklyMessage = `⚡ <b>WEEKLY VIP BONUS & YONO PROMO CODE ALERT!</b> ⚡\n\n` +
-    `👑 <b>Hello my sweet friend!</b>\n\n` +
-    `All our games and promo codes are created exclusively by **Yono Gaming Head AI**. Collect your instant VIP bonuses now! 💰\n\n` +
-    `🔥 <b>What to do now:</b>\n` +
-    `• 🎮 Send any correct game name from our platform!\n` +
-    `• 💎 Collect instant VIP promo codes and download links!\n\n` +
-    `👑 <i>Chat now and claim your free bonus! 🚀</i>`;
-
-cron.schedule('0 10 * * 0', () => {
-    if (botUsers && botUsers.length > 0) {
-        botUsers.forEach((userId, index) => {
-            setTimeout(() => {
-                sendSingleMessage(userId, weeklyMessage, null, null);
-            }, index * 50); 
-        });
-    }
-});
-
-console.log("Yono Gaming Head AI bot running successfully with Voice Input Support & Creator Branding!");
+console.log("Yono Gaming Head AI bot running successfully with natural AI conversation and smart game matching!");
