@@ -402,7 +402,7 @@ function smartFormatPost(text, entities, timestamp) {
                 let cleanLine = trimmed.replace(/<[^>]*>/g, '').replace(/Download Now/gi, '').replace(/📱/g, '').trim();
                 let labelPart = cleanLine.replace(/➔|->|➜/g, '').trim();
                 if (!labelPart || labelPart.toLowerCase().includes('game link') || labelPart.toLowerCase().includes('link')) {
-                    formattedLines.push(`<b>🎰 YONO GAME LINK</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
+                    formattedLines.push(`<b>🎰 GAME LINK</b> ⁠☞ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
                 } else {
                     formattedLines.push(`<b>${labelPart}</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
                 }
@@ -698,7 +698,7 @@ bot.on('message', async (msg) => {
         return;
     }
 
-    if (msg.text && (msg.text.startsWith('/comingsoon') || msg.text.startsWith('/cominsoon'))) {
+        if (msg.text && (msg.text.startsWith('/comingsoon') || msg.text.startsWith('/cominsoon'))) {
         if (!ADMIN_CHAT_ID || chatId !== ADMIN_CHAT_ID) {
             await sendSingleMessage(chatId, `❌ <b>Access Denied!</b>\n\nYou are not authorized to use this command.`, null, null);
             return;
@@ -707,7 +707,7 @@ bot.on('message', async (msg) => {
         let cleanText = msg.text.replace('/comingsoon', '').replace('/cominsoon', '').trim();
         let parts = cleanText.split('|');
         if (parts.length === 2) {
-            let gameName = parts[0].trim();
+            let gameName = parts[0].trim(); // <--- এখানে parts.0 এর জায়গায় parts[0] করে দেওয়া হয়েছে
             let gameDate = parts[1].trim();
             addUpcomingGame(gameName, gameDate);
             
@@ -720,6 +720,7 @@ bot.on('message', async (msg) => {
         }
         return;
     }
+
 
     if (msg.voice || msg.audio) {
         let fileId = msg.voice ? msg.voice.file_id : msg.audio.file_id;
