@@ -148,13 +148,21 @@ function addUpcomingGame(name, date) {
     fs.writeFileSync(UPCOMING_FILE, JSON.stringify(list, null, 2));
 }
 
-function getFormattedTimestamp() {
-    let now = new Date();
-    let optionsDate = { day: '2-digit', month: 'short', year: 'numeric' };
-    let optionsTime = { hour: '2-digit', minute: '2-digit', hour12: true };
-    let dateStr = now.toLocaleDateString('en-GB', optionsDate);
-    let timeStr = now.toLocaleTimeString('en-US', optionsTime).toLowerCase();
-    return `${dateStr}, ${timeStr}`;
+// Helper function to remove stars and add context-aware emojis
+function cleanStarsAndAddEmojis(text) {
+    if (!text) return '';
+    return text.replace(/\*\*(.*?)\*\*/g, (match, p1) => {
+        let lower = p1.toLowerCase();
+        let emoji = '';
+        if (lower.includes('help') || lower.includes('support') || lower.includes('সাহায্য')) emoji = '🛟 ';
+        else if (lower.includes('game') || lower.includes('গেম')) emoji = '🎮 ';
+        else if (lower.includes('promo') || lower.includes('code') || lower.includes('কোড')) emoji = '🎁 ';
+        else if (lower.includes('bonus') || lower.includes('বোনাস')) emoji = '🎉 ';
+        else if (lower.includes('link') || lower.includes('লিংক')) emoji = '🔗 ';
+        else if (lower.includes('withdrawal') || lower.includes('amount') || lower.includes('টাকা')) emoji = '💰 ';
+        else emoji = '📌 ';
+        return `${emoji}${p1}`;
+    }).replace(/\*/g, '');
 }
 
 function getSystemPrompt(userQuery) {
@@ -241,6 +249,8 @@ async function trackAndManageMessages(chatId, newIds) {
 }
 
 async function sendSingleMessage(chatId, text, photo, replyMarkup) {
+    let processedText = cleanStarsAndAddEmojis(text);
+
     const options = { 
         parse_mode: "HTML",
         disable_web_page_preview: true 
@@ -253,14 +263,14 @@ async function sendSingleMessage(chatId, text, photo, replyMarkup) {
     let sentMsg = null;
     try {
         if (photo) {
-            if (text && text.length > 1024) {
+            if (processedText && processedText.length > 1024) {
                 await bot.sendPhoto(chatId, photo, { reply_markup: options.reply_markup });
-                sentMsg = await bot.sendMessage(chatId, text, options);
+                sentMsg = await bot.sendMessage(chatId, processedText, options);
             } else {
-                sentMsg = await bot.sendPhoto(chatId, photo, { caption: text, ...options });
+                sentMsg = await bot.sendPhoto(chatId, photo, { caption: processedText, ...options });
             }
-        } else if (text) {
-            sentMsg = await bot.sendMessage(chatId, text, options);
+        } else if (processedText) {
+            sentMsg = await bot.sendMessage(chatId, processedText, options);
         }
 
         if (sentMsg) {
@@ -281,10 +291,153 @@ server.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT}`);
 });
 
+function formatPostTimestamp(timestamp) {
+    let date = new Date(timestamp || Date.now());
+    return date.toLocaleString('en-GB', {
+        timeZone: 'Asia/Kolkata',
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    });
+}
+
+function smartFormatPost(text, entities, timestamp) {
+    if (!text) return '';
+    let cleanedInputText = cleanStarsAndAddEmojis(text);
+    let downloadUrl = '';
+    if (entities && entities.length > 0) {
+        entities.forEach(entity => {
+            if (entity.type === 'text_link' && entity.url) {
+                if (!entity.url.includes('t.me') && !entity.url.includes('telegram')) {
+                    downloadUrl = entity.url;
+                }
+            } else if (entity.type === 'url') {
+                let extractedUrl = cleanedInputText.substring(entity.offset, entity.offset + entity.length);
+                if (extractedUrl && !extractedUrl.includes('t.me') && !extractedUrl.includes('telegram')) {
+                    downloadUrl = extractedUrl;
+                }
+            }
+        });
+    }
+
+    if (!downloadUrl) {
+        let urlMatch = cleanedInputText.match(/(https?:\/\/[^\s<]+)/g);
+        if (urlMatch) {
+            for (let u of urlMatch) {
+                if (!u.includes('t.me') && !u.includes('telegram')) {
+                    downloadUrl = u;
+                    break;
+                }
+            }
+        }
+    }
+
+    let lines = cleanedInputText.split('\n');
+    let formattedLines = [];
+    let hashtags = [];
+    let nonEmtpyCount = 0;
+    let timestampAdded = false;
+    let timeStr = formatPostTimestamp(timestamp);
+
+    lines.forEach(line => {
+        let trimmed = line.trim();
+        if (!trimmed) return;
+        let lower = trimmed.toLowerCase();
+
+        if (trimmed.startsWith('#')) {
+            let tags = trimmed.match(/#\w+/g);
+            if (tags) {
+                tags.forEach(t => {
+                    if (!hashtags.includes(t)) hashtags.push(t);
+                });
+            }
+            return;
+        }
+
+        nonEmtpyCount++;
+
+        if (nonEmtpyCount === 1) {
+            let cleanLine = trimmed.replace(/<[^>]*>/g, '');
+            formattedLines.push(`<b>${cleanLine}</b>`);
+            return;
+        }
+
+        let isGameListItem = trimmed.startsWith('•') || trimmed.startsWith('▪️') || trimmed.startsWith('🔸');
+        let isDownloadLine = (lower.includes('download now') || lower.includes('game link') || (lower.includes('link') && !lower.includes('promo')));
+        
+        let isQuoteLine = !isGameListItem && !isDownloadLine && (
+            lower.includes('signup bonus') || 
+            lower.includes('new users') || 
+            lower.includes('join & pin') || 
+            lower.includes('claim all extra special code') ||
+            lower.includes('daily promo codes') ||
+            trimmed.startsWith('🔥') ||
+            trimmed.startsWith('🎁') ||
+            trimmed.startsWith('📢')
+        );
+
+        if (isGameListItem) {
+            let cleanItem = trimmed.replace(/<[^>]*>/g, '');
+            formattedLines.push(cleanItem);
+        }
+        else if (isQuoteLine) {
+            let cleanLine = trimmed.replace(/<[^>]*>/g, '');
+            formattedLines.push(`<blockquote><b>${cleanLine}</b></blockquote>`);
+            
+            if (lower.includes('join & pin') && !timestampAdded) {
+                formattedLines.push(`🕒 <b>Date & Time: ${timeStr}</b>`);
+                timestampAdded = true;
+            }
+        } 
+        else if (isDownloadLine) {
+            if (downloadUrl) {
+                // গেমের নামটি বের করে শুধু নাম ও সামনে আইকন রাখার জন্য নিচের অংশটি আপডেট করা হলো
+                let firstLineText = lines[0] ? lines[0].replace(/<[^>]*>/g, '').split('→')[0].trim() : 'YONO GAMES';
+                formattedLines.push(`<b>🎰 ${firstLineText} LINK</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
+            } else {
+                formattedLines.push(trimmed);
+            }
+        } 
+        else {
+            if (trimmed.includes('➔') || trimmed.includes('->') || trimmed.includes('➜')) {
+                let parts = trimmed.split(/➔|->|➜/);
+                if (parts.length === 2) {
+                    let label = parts[0].replace(/<[^>]*>/g, '').trim();
+                    let codeOrDomain = parts[1].replace(/<[^>]*>/g, '').trim();
+                    let safeCode = codeOrDomain.replace(/\./g, '.\u200B');
+                    formattedLines.push(`<b>${label}</b> ➜ <code>${safeCode}</code>`);
+                    return;
+                }
+            }
+
+            let formattedLine = trimmed.replace(/(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z0-9][-a-zA-Z0-9]*[^\s]*\.(com|win|net|top|app|vip|in|store|club|xyz|buzz|bet)[^\s]*)/gi, (match) => {
+                return `<code>${match.replace(/\./g, '.\u200B')}</code>`;
+            });
+
+            formattedLines.push(formattedLine);
+        }
+    });
+
+    if (!timestampAdded) {
+        formattedLines.push(`🕒 <b>Date & Time: ${timeStr}</b>`);
+        timestampAdded = true;
+    }
+
+    if (hashtags.length > 0) {
+        formattedLines.push(`<blockquote><tg-spoiler>${hashtags.join(' ')}</tg-spoiler></blockquote>`);
+    }
+
+    return formattedLines.join('\n\n');
+}
+
 function getGameIdentifier(text) {
     if (!text) return '';
     let firstLine = text.split('\n')[0].toLowerCase();
-    return firstLine.replace(/[^a-z0-9]/g, '');
+    let cleanGame = firstLine.replace(/->|➔|➜/g, ' ').split('new promo')[0].split('promo')[0].trim();
+    return cleanGame.replace(/[^a-z0-9]/g, '');
 }
 
 function broadcastPostToAllUsers(post) {
@@ -299,10 +452,16 @@ function broadcastPostToAllUsers(post) {
 
 function savePostContent(msg) {
     let rawText = msg.caption || msg.text || '';
+    let entities = msg.caption_entities || msg.entities || [];
+    let postTimestamp = Date.now();
+    
+    let formattedText = smartFormatPost(rawText, entities, postTimestamp);
+    if (!formattedText) formattedText = rawText;
+    
     const photo = msg.photo ? msg.photo[msg.photo.length - 1].file_id : null;
     const replyMarkup = msg.reply_markup || null;
     
-    if (rawText || photo) {
+    if (formattedText || photo) {
         const textExists = postDatabase.all_posts.some(p => p.rawText === rawText);
         if (textExists) return false;
 
@@ -313,21 +472,12 @@ function savePostContent(msg) {
             });
         }
 
-        // Format post text to ensure blockquotes and dynamic timestamp
-        let formattedText = rawText;
-        let timeStr = getFormattedTimestamp();
-
-        // If timestamp is not already in text, append/update it
-        if (!formattedText.includes("Date & Time:")) {
-            formattedText = formattedText.trim() + `\n\n🕒 Date & Time: ${timeStr}`;
-        }
-
         let postContent = {
             rawText: rawText,
             text: formattedText,
             photo: photo,
             replyMarkup: replyMarkup || null,
-            timestamp: Date.now()
+            timestamp: postTimestamp
         };
 
         if (!postDatabase.all_posts) postDatabase.all_posts = [];
@@ -349,11 +499,14 @@ function processIncomingChannelPost(msg) {
             chatIdStr === targetClean) {
             const saved = savePostContent(msg);
             if (saved) {
-                let latestPost = postDatabase.all_posts[postDatabase.all_posts.length - 1];
+                let rawText = msg.caption || msg.text || '';
+                let entities = msg.caption_entities || msg.entities || [];
+                let postTimestamp = Date.now();
+                let text = smartFormatPost(rawText, entities, postTimestamp);
                 broadcastPostToAllUsers({
-                    text: latestPost.text,
-                    photo: latestPost.photo,
-                    replyMarkup: latestPost.replyMarkup
+                    text: text,
+                    photo: msg.photo ? msg.photo[msg.photo.length - 1].file_id : null,
+                    replyMarkup: msg.reply_markup || null
                 });
             }
         }
@@ -396,23 +549,29 @@ async function handleUserQuery(chatId, queryText) {
 
         if (matchedGameObj) {
             let matchedPost = postDatabase.all_posts.find(p => {
-                let firstLine = p.text.split('\n')[0].toLowerCase();
+                let firstLine = p.text.split('\n')[0].replace(/<[^>]*>/g, '').trim().toLowerCase();
+                let rawLower = p.rawText.toLowerCase();
+                
                 let normFirstLine = firstLine.replace(/[\s._-]/g, '');
+                let normRawText = rawLower.replace(/[\s._-]/g, '');
                 let normGameName = matchedGameObj.name.toLowerCase().replace(/[\s._-]/g, '');
 
                 let matchesAlias = matchedGameObj.aliases.some(alias => {
                     let normAlias = alias.toLowerCase().replace(/[\s._-]/g, '');
-                    return normFirstLine.includes(normAlias);
+                    return normFirstLine.includes(normAlias) || normRawText.includes(normAlias);
                 });
 
-                return normFirstLine.includes(normGameName) || matchesAlias;
+                return normFirstLine.includes(normGameName) || normRawText.includes(normGameName) || matchesAlias;
             });
 
             if (matchedPost) {
                 await sendSingleMessage(chatId, matchedPost.text, matchedPost.photo, matchedPost.replyMarkup);
                 return;
             } else {
-                let notFoundMsg = `⚠️ <b>${matchedGameObj.name} এর কোনো প্রমো কোড বা পোস্ট এই মুহূর্তে আমাদের ডাটাবেজে নেই।</b>`;
+                let notFoundMsg = `⚠️ <b>${matchedGameObj.name} এর কোনো প্রমো কোড বা পোস্ট এই মুহূর্তে আমাদের ডাটাবেজে নেই।</b>\n\nঅনুগ্রহ করে চ্যানেল থেকে পোস্ট ফরওয়ার্ড করে ডাটাবেজে যুক্ত করুন অথবা নতুন কোডের জন্য অপেক্ষা করুন।`;
+                if (/^[a-zA-Z\s]+$/.test(queryText)) {
+                    notFoundMsg = `⚠️ <b>No promo code or post is currently available in the database for ${matchedGameObj.name}.</b>\n\nPlease forward the official post from the channel to add it to the database or wait for updates.`;
+                }
                 await sendSingleMessage(chatId, notFoundMsg, null, null);
                 return;
             }
@@ -515,7 +674,7 @@ bot.on('message', async (msg) => {
 
     if (msg.text && msg.text.startsWith('/addgame')) {
         if (!ADMIN_CHAT_ID || chatId !== ADMIN_CHAT_ID) {
-            await sendSingleMessage(chatId, `❌ <b>Access Denied!</b>`, null, null);
+            await sendSingleMessage(chatId, `❌ <b>Access Denied!</b>\n\nYou are not authorized to use this command.`, null, null);
             return;
         }
 
@@ -532,7 +691,7 @@ bot.on('message', async (msg) => {
 
     if (msg.text && (msg.text.startsWith('/comingsoon') || msg.text.startsWith('/cominsoon'))) {
         if (!ADMIN_CHAT_ID || chatId !== ADMIN_CHAT_ID) {
-            await sendSingleMessage(chatId, `❌ <b>Access Denied!</b>`, null, null);
+            await sendSingleMessage(chatId, `❌ <b>Access Denied!</b>\n\nYou are not authorized to use this command.`, null, null);
             return;
         }
 
@@ -561,7 +720,7 @@ bot.on('message', async (msg) => {
         if (transcribedText) {
             await handleUserQuery(chatId, transcribedText);
         } else {
-            await sendSingleMessage(chatId, "Sorry, I could not understand your voice message.", null, null);
+            await sendSingleMessage(chatId, "Sorry, I could not understand your voice message. Please speak the official game name clearly or type it.", null, null);
         }
         return;
     }
