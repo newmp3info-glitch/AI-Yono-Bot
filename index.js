@@ -394,9 +394,13 @@ function smartFormatPost(text, entities, timestamp) {
         } 
         else if (isDownloadLine) {
             if (downloadUrl) {
-                // গেমের নামটি বের করে শুধু নাম ও সামনে আইকন রাখার জন্য নিচের অংশটি আপডেট করা হলো
-                let firstLineText = lines[0] ? lines[0].replace(/<[^>]*>/g, '').split('→')[0].trim() : 'YONO GAMES';
-                formattedLines.push(`<b>🎰 ${firstLineText} LINK</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
+                let cleanLine = trimmed.replace(/<[^>]*>/g, '').replace(/Download Now/gi, '').replace(/📱/g, '').trim();
+                let labelPart = cleanLine.replace(/➔|->|➜/g, '').trim();
+                if (!labelPart || labelPart.toLowerCase().includes('game link') || labelPart.toLowerCase().includes('link')) {
+                    formattedLines.push(`<b>🎰 GAME LINK</b> ⁠☞ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
+                } else {
+                    formattedLines.push(`<b>${labelPart}</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
+                }
             } else {
                 formattedLines.push(trimmed);
             }
