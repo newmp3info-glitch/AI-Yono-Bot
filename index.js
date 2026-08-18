@@ -399,6 +399,7 @@ function smartFormatPost(text, entities, timestamp) {
         else if (isDownloadLine) {
             if (downloadUrl) {
                 let cleanGameName = extractedGameName ? extractedGameName.replace(/➔|->|➜/g, '').trim().toUpperCase() : 'YONO GAME';
+                // তীর আইকন মুছে ফেলা হয়েছে যাতে শুধু গেমের নাম এবং LINK থাকে
                 formattedLines.push(`<b>🎰 ${cleanGameName} LINK ☞</b> <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
             } else {
                 formattedLines.push(trimmed);
