@@ -186,21 +186,16 @@ CRITICAL RULES YOU MUST FOLLOW STRICTLY:
    - If the user asks whether you (Yono Gaming Head AI) or your company creates new games and new promo codes, you MUST enthusiastically and clearly answer **YES** and explain that you directly create them and they instantly activate across all games.
 3. **ABSOLUTE BAN ON FAKE OR INVENTED PROMO CODES**: 
    - **NEVER GENERATE, INVENT, OR MAKE UP ANY FICTIONAL PROMO CODES** (such as YONO1234 or random numbers/codes). You do not possess arbitrary codes. Promo codes are strictly stored in database posts or updated in the official channel. If a user asks for a promo code, never fabricate one.
-4. **ABSOLUTE BAN ON PLAY STORE MENTION & FAKE/INVENTED URLS (CRITICAL)**: 
-   - **NEVER mention Google Play Store, Play Store, or downloading games from Play Store.** 
-   - **ABSOLUTE BAN ON FAKE/INVENTED URLS**: **NEVER write, invent, or output any dummy, mock, or fake website links/URLs** (such as `https://yonogaming.com/download` or any other fake domain). If a user asks for a game link, tell them to type the exact name of the official game so the bot can fetch the real stored link from the database. If no real link is stored, never fabricate or invent one!
-5. **WITHDRAWAL & PAYMENT ISSUES**: 
+4. **WITHDRAWAL & PAYMENT ISSUES**: 
    - Never provide external URL links or emails. 
    - Only advise the user that for withdrawal or payment issues, they must contact customer support directly from inside the specific game app.
-6. **MANDATORY BOT ANNOUNCEMENT SIGNATURE**: At the very end of your response, you MUST always include the following official bot announcement translated 100% accurately into the user's language and script:
+5. **MANDATORY BOT ANNOUNCEMENT SIGNATURE**: At the very end of your response, you MUST always include the following official bot announcement translated 100% accurately into the user's language and script:
 "🤖 Official Bot Announcement:
 
 Remember, all our official new games and new promo codes are created directly by Yono Gaming Head AI! Once generated, these new promo codes are instantly activated across all games. 🚀"
 
 ${upcomingSection}`;
 }
-
-
 
 if (!fs.existsSync(POSTS_FILE)) {
     fs.writeFileSync(POSTS_FILE, JSON.stringify({ all_posts: [] }, null, 2));
@@ -402,7 +397,7 @@ function smartFormatPost(text, entities, timestamp) {
                 let cleanLine = trimmed.replace(/<[^>]*>/g, '').replace(/Download Now/gi, '').replace(/📱/g, '').trim();
                 let labelPart = cleanLine.replace(/➔|->|➜/g, '').trim();
                 if (!labelPart || labelPart.toLowerCase().includes('game link') || labelPart.toLowerCase().includes('link')) {
-                    formattedLines.push(`<b>🎰 GAME LINK</b> ⁠☞ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
+                    formattedLines.push(`<b>🎰 YONO GAME LINK</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
                 } else {
                     formattedLines.push(`<b>${labelPart}</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
                 }
@@ -698,7 +693,7 @@ bot.on('message', async (msg) => {
         return;
     }
 
-        if (msg.text && (msg.text.startsWith('/comingsoon') || msg.text.startsWith('/cominsoon'))) {
+    if (msg.text && (msg.text.startsWith('/comingsoon') || msg.text.startsWith('/cominsoon'))) {
         if (!ADMIN_CHAT_ID || chatId !== ADMIN_CHAT_ID) {
             await sendSingleMessage(chatId, `❌ <b>Access Denied!</b>\n\nYou are not authorized to use this command.`, null, null);
             return;
@@ -707,7 +702,7 @@ bot.on('message', async (msg) => {
         let cleanText = msg.text.replace('/comingsoon', '').replace('/cominsoon', '').trim();
         let parts = cleanText.split('|');
         if (parts.length === 2) {
-            let gameName = parts[0].trim(); // <--- এখানে parts.0 এর জায়গায় parts[0] করে দেওয়া হয়েছে
+            let gameName = parts[0].trim();
             let gameDate = parts[1].trim();
             addUpcomingGame(gameName, gameDate);
             
@@ -720,7 +715,6 @@ bot.on('message', async (msg) => {
         }
         return;
     }
-
 
     if (msg.voice || msg.audio) {
         let fileId = msg.voice ? msg.voice.file_id : msg.audio.file_id;
