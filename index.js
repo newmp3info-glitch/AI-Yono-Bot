@@ -205,12 +205,16 @@ try {
     postDatabase = JSON.parse(fs.readFileSync(POSTS_FILE, 'utf8'));
     if (!postDatabase.all_posts) postDatabase.all_posts = [];
     
-    // Auto-clean any existing cached posts to remove arrow before LINK
+    // কঠোরভাবে ডাটাবেজ থেকে তীর চিহ্ন চিরতরে মুছে ফেলা হচ্ছে
     let dbModified = false;
     postDatabase.all_posts.forEach(p => {
-        if (p.text && (p.text.includes('➔ LINK') || p.text.includes('-> LINK') || p.text.includes('➜ LINK'))) {
-            p.text = p.text.replace(/\s*(➔|->|➜)\s*LINK/gi, ' LINK');
-            dbModified = true;
+        if (p.text) {
+            let cleaned = p.text.replace(/\s*(?:➔|->|➜)\s*LINK/gi, ' LINK');
+            cleaned = cleaned.replace(/<b>\s*🎰\s*([^<]+?)\s*(?:➔|->|➜)\s*LINK\s*<\/b>/gi, '<b>🎰 $1 LINK</b>');
+            if (cleaned !== p.text) {
+                p.text = cleaned;
+                dbModified = true;
+            }
         }
     });
     if (dbModified) {
@@ -411,14 +415,16 @@ function smartFormatPost(text, entities, timestamp) {
         else if (isDownloadLine) {
             if (downloadUrl) {
                 let cleanGameName = extractedGameName ? extractedGameName.replace(/➔|->|➜/g, '').trim().toUpperCase() : 'YONO GAME';
-                // গেমের নাম এবং LINK এর মাঝের তীর আইকনটি সম্পূর্ণ বাদ দেওয়া হয়েছে
-                formattedLines.push(`<b>🎰 ${cleanGameName} LINK ☞</b> <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
+                // গেমের নাম এবং LINK এর মাঝখানে কোনো তীর চিহ্ন ছাড়াই নিখুঁত আউটপুট
+                formattedLines.push(`<b>🎰 ${cleanGameName} LINK</b> <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
             } else {
-                formattedLines.push(trimmed);
+                let cleanFallback = trimmed.replace(/\s*(?:➔|->|➜)\s*LINK/gi, ' LINK');
+                formattedLines.push(cleanFallback);
             }
         } 
         else {
-            if (trimmed.includes('➔') || trimmed.includes('->') || trimmed.includes('➜')) {
+            // লিঙ্ক বা ডাউনলোডের কোনো লাইন এখানে এন্ট্রি নিতে পারবে না
+            if (!lower.includes('link') && !lower.includes('download') && (trimmed.includes('➔') || trimmed.includes('->') || trimmed.includes('➜'))) {
                 let parts = trimmed.split(/➔|->|➜/);
                 if (parts.length === 2) {
                     let label = parts[0].replace(/<[^>]*>/g, '').trim();
