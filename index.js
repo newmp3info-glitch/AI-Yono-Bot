@@ -249,7 +249,6 @@ async function trackAndManageMessages(chatId, newIds) {
 }
 
 async function sendSingleMessage(chatId, text, photo, replyMarkup) {
-    // Clean stars and add contextual emojis before sending
     let processedText = cleanStarsAndAddEmojis(text);
 
     const options = { 
@@ -418,7 +417,7 @@ function smartFormatPost(text, entities, timestamp) {
                 }
             }
 
-            let formattedLine = trimmed.replace(/(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z0-9][-a-zA-Z0-9]*[^\s]*\.(com|win|net|top|app|vip|in|store|club|xyz|bet)[^\s]*)/gi, (match) => {
+            let formattedLine = trimmed.replace(/(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z0-9][-a-zA-Z0-9]*[^\s]*\.(com|win|net|top|app|vip|in|store|club|xyz|buzz|bet)[^\s]*)/gi, (match) => {
                 return `<code>${match.replace(/\./g, '.\u200B')}</code>`;
             });
 
@@ -438,6 +437,23 @@ function smartFormatPost(text, entities, timestamp) {
     return formattedLines.join('\n\n');
 }
 
+function getGameIdentifier(text) {
+    if (!text) return '';
+    let firstLine = text.split('\n')[0].toLowerCase();
+    let cleanGame = firstLine.replace(/->|➔|➜/g, ' ').split('new promo')[0].split('promo')[0].trim();
+    return cleanGame.replace(/[^a-z0-9]/g, '');
+}
+
+function broadcastPostToAllUsers(post) {
+    if (!botUsers || botUsers.length === 0) return;
+
+    botUsers.forEach((userId, index) => {
+        setTimeout(() => {
+            sendSingleMessage(userId, post.text, post.photo, post.replyMarkup);
+        }, index * 50); 
+    });
+}
+
 function savePostContent(msg) {
     let rawText = msg.caption || msg.text || '';
     let entities = msg.caption_entities || msg.entities || [];
@@ -452,6 +468,13 @@ function savePostContent(msg) {
     if (formattedText || photo) {
         const textExists = postDatabase.all_posts.some(p => p.rawText === rawText);
         if (textExists) return false;
+
+        const gameKey = getGameIdentifier(rawText);
+        if (gameKey && gameKey.length > 2) {
+            postDatabase.all_posts = postDatabase.all_posts.filter(p => {
+                return getGameIdentifier(p.rawText) !== gameKey;
+            });
+        }
 
         let postContent = {
             rawText: rawText,
@@ -469,7 +492,6 @@ function savePostContent(msg) {
     return false;
 }
 
-// Improved robust channel post listeners (handles channel username matching correctly)
 function processIncomingChannelPost(msg) {
     if (msg.chat) {
         const chatUsername = msg.chat.username ? `@${msg.chat.username.trim().toLowerCase()}` : '';
@@ -479,7 +501,18 @@ function processIncomingChannelPost(msg) {
         if (chatUsername === targetClean || 
             (msg.chat.username && msg.chat.username.toLowerCase() === targetClean.replace('@', '')) ||
             chatIdStr === targetClean) {
-            savePostContent(msg);
+            const saved = savePostContent(msg);
+            if (saved) {
+                let rawText = msg.caption || msg.text || '';
+                let entities = msg.caption_entities || msg.entities || [];
+                let postTimestamp = Date.now();
+                let text = smartFormatPost(rawText, entities, postTimestamp);
+                broadcastPostToAllUsers({
+                    text: text,
+                    photo: msg.photo ? msg.photo[msg.photo.length - 1].file_id : null,
+                    replyMarkup: msg.reply_markup || null
+                });
+            }
         }
     }
 }
@@ -717,4 +750,4 @@ bot.on('message', async (msg) => {
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully with Robust Space-Insensitive Post Matching & Emoji Cleaning!");
+console.log("Yono Gaming Head AI bot running successfully with Channel Auto-Save & Broadcast Integration!");
