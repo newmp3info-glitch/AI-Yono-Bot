@@ -215,7 +215,7 @@ try {
                 dbModified = true;
             }
         } else if (p.text) {
-            let cleanedOld = p.text.replace(/➔|->|➜/g, ' ');
+            let cleanedOld = p.text.replace(/➔|->|➜/g, '');
             if (cleanedOld !== p.text) {
                 p.text = cleanedOld;
                 dbModified = true;
@@ -326,7 +326,11 @@ function formatPostTimestamp(timestamp) {
 
 function smartFormatPost(text, entities, timestamp) {
     if (!text) return '';
-    let cleanedInputText = cleanStarsAndAddEmojis(text);
+    
+    // একেবারে শুরুতেই সকল তীর চিহ্ন চিরতরে মুছে ফেলা হচ্ছে যাতে কোথাও আর না থাকে
+    let cleanedInputText = text.replace(/➔|->|➜/g, ' ');
+    cleanedInputText = cleanStarsAndAddEmojis(cleanedInputText);
+
     let downloadUrl = '';
     if (entities && entities.length > 0) {
         entities.forEach(entity => {
@@ -381,7 +385,7 @@ function smartFormatPost(text, entities, timestamp) {
         nonEmtpyCount++;
 
         if (nonEmtpyCount === 1) {
-            let cleanLine = trimmed.replace(/<[^>]*>/g, '').replace(/➔|->|➜/g, '').trim();
+            let cleanLine = trimmed.replace(/<[^>]*>/g, '').trim();
             extractedGameName = cleanLine.split(/new promo|promo/i)[0].trim();
             formattedLines.push(`<b>${cleanLine}</b>`);
             return;
@@ -402,11 +406,11 @@ function smartFormatPost(text, entities, timestamp) {
         );
 
         if (isGameListItem) {
-            let cleanItem = trimmed.replace(/<[^>]*>/g, '').replace(/➔|->|➜/g, '');
+            let cleanItem = trimmed.replace(/<[^>]*>/g, '').trim();
             formattedLines.push(cleanItem);
         }
         else if (isQuoteLine) {
-            let cleanLine = trimmed.replace(/<[^>]*>/g, '').replace(/➔|->|➜/g, '');
+            let cleanLine = trimmed.replace(/<[^>]*>/g, '').trim();
             formattedLines.push(`<blockquote><b>${cleanLine}</b></blockquote>`);
             
             if (lower.includes('join & pin') && !timestampAdded) {
@@ -415,8 +419,7 @@ function smartFormatPost(text, entities, timestamp) {
             }
         } 
         else if (isDownloadLine) {
-            let cleanGameName = extractedGameName ? extractedGameName.replace(/➔|->|➜/g, '').trim().toUpperCase() : 'YONO GAME';
-            // নিশ্চিত করা হয়েছে যে কোনো অবস্থাতেই গেমের নাম এবং LINK এর মাঝে তীর চিহ্ন থাকবে না
+            let cleanGameName = extractedGameName ? extractedGameName.trim().toUpperCase() : 'YONO GAME';
             if (downloadUrl) {
                 formattedLines.push(`<b>🎰 ${cleanGameName} LINK</b> <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
             } else {
@@ -424,8 +427,27 @@ function smartFormatPost(text, entities, timestamp) {
             }
         } 
         else {
-            let cleanedNormal = trimmed.replace(/➔|->|➜/g, '');
-            let formattedLine = cleanedNormal.replace(/(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z0-9][-a-zA-Z0-9]*[^\s]*\.(com|win|net|top|app|vip|in|store|club|xyz|buzz|bet)[^\s]*)/gi, (match) => {
+            // প্রমো কোডের লাইন নিখুঁতভাবে ফরম্যাট করা হচ্ছে যাতে এক ট্যাপেই কপি করা যায়
+            if (lower.includes('promo') || lower.includes('code')) {
+                let cleanLine = trimmed.replace(/<[^>]*>/g, '').trim();
+                let parts = cleanLine.split(/:/);
+                if (parts.length >= 2) {
+                    let label = parts[0].trim();
+                    let codeVal = parts.slice(1).join(':').trim();
+                    formattedLines.push(`<b>${label}:</b> <code>${codeVal}</code>`);
+                    return;
+                } else {
+                    let words = cleanLine.split(/\s+/);
+                    if (words.length >= 2) {
+                        let codeVal = words[words.length - 1];
+                        let label = words.slice(0, words.length - 1).join(' ');
+                        formattedLines.push(`<b>${label}</b> <code>${codeVal}</code>`);
+                        return;
+                    }
+                }
+            }
+
+            let formattedLine = trimmed.replace(/(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z0-9][-a-zA-Z0-9]*[^\s]*\.(com|win|net|top|app|vip|in|store|club|xyz|buzz|bet)[^\s]*)/gi, (match) => {
                 return `<code>${match.replace(/\./g, '.\u200B')}</code>`;
             });
 
