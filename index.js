@@ -397,7 +397,7 @@ function smartFormatPost(text, entities, timestamp) {
                 let cleanLine = trimmed.replace(/<[^>]*>/g, '').replace(/Download Now/gi, '').replace(/📱/g, '').trim();
                 let labelPart = cleanLine.replace(/➔|->|➜/g, '').trim();
                 if (!labelPart || labelPart.toLowerCase().includes('game link') || labelPart.toLowerCase().includes('link')) {
-                    formattedLines.push(`<b>🎰 YONO GAME LINK</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
+                    formattedLines.push(`<b>🎰 ${finalGameName} LINK</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
                 } else {
                     formattedLines.push(`<b>${labelPart}</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
                 }
