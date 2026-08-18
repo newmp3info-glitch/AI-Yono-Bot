@@ -204,6 +204,18 @@ let postDatabase = { all_posts: [] };
 try {
     postDatabase = JSON.parse(fs.readFileSync(POSTS_FILE, 'utf8'));
     if (!postDatabase.all_posts) postDatabase.all_posts = [];
+    
+    // Auto-clean any existing cached posts to remove arrow before LINK
+    let dbModified = false;
+    postDatabase.all_posts.forEach(p => {
+        if (p.text && (p.text.includes('➔ LINK') || p.text.includes('-> LINK') || p.text.includes('➜ LINK'))) {
+            p.text = p.text.replace(/\s*(➔|->|➜)\s*LINK/gi, ' LINK');
+            dbModified = true;
+        }
+    });
+    if (dbModified) {
+        fs.writeFileSync(POSTS_FILE, JSON.stringify(postDatabase, null, 2));
+    }
 } catch (e) {
     postDatabase = { all_posts: [] };
 }
@@ -399,7 +411,7 @@ function smartFormatPost(text, entities, timestamp) {
         else if (isDownloadLine) {
             if (downloadUrl) {
                 let cleanGameName = extractedGameName ? extractedGameName.replace(/➔|->|➜/g, '').trim().toUpperCase() : 'YONO GAME';
-                // তীর আইকন মুছে ফেলা হয়েছে যাতে শুধু গেমের নাম এবং LINK থাকে
+                // গেমের নাম এবং LINK এর মাঝের তীর আইকনটি সম্পূর্ণ বাদ দেওয়া হয়েছে
                 formattedLines.push(`<b>🎰 ${cleanGameName} LINK ☞</b> <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
             } else {
                 formattedLines.push(trimmed);
