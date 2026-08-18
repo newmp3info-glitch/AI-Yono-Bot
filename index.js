@@ -201,7 +201,7 @@ ${upcomingSection}`;
 }
 
 
- 
+
 if (!fs.existsSync(POSTS_FILE)) {
     fs.writeFileSync(POSTS_FILE, JSON.stringify({ all_posts: [] }, null, 2));
 }
@@ -402,7 +402,7 @@ function smartFormatPost(text, entities, timestamp) {
                 let cleanLine = trimmed.replace(/<[^>]*>/g, '').replace(/Download Now/gi, '').replace(/📱/g, '').trim();
                 let labelPart = cleanLine.replace(/➔|->|➜/g, '').trim();
                 if (!labelPart || labelPart.toLowerCase().includes('game link') || labelPart.toLowerCase().includes('link')) {
-                    formattedLines.push(`<b>🎰 GAME LINK</b> ⁠☞ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
+                    formattedLines.push(`<b>🎰 YONO GAME LINK</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
                 } else {
                     formattedLines.push(`<b>${labelPart}</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
                 }
