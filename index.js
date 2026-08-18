@@ -341,6 +341,7 @@ function smartFormatPost(text, entities, timestamp) {
     let nonEmtpyCount = 0;
     let timestampAdded = false;
     let timeStr = formatPostTimestamp(timestamp);
+    let extractedGameName = '';
 
     lines.forEach(line => {
         let trimmed = line.trim();
@@ -361,6 +362,11 @@ function smartFormatPost(text, entities, timestamp) {
 
         if (nonEmtpyCount === 1) {
             let cleanLine = trimmed.replace(/<[^>]*>/g, '');
+            // Extract game name from the first line (e.g. "YONO 777 ➔ ..." or "789JackPots → ...")
+            let nameParts = cleanLine.split(/➔|->|➜/);
+            if (nameParts.length > 0) {
+                extractedGameName = nameParts[0].replace(/new promo.*/gi, '').replace(/promo.*/gi, '').trim();
+            }
             formattedLines.push(`<b>${cleanLine}</b>`);
             return;
         }
@@ -394,13 +400,8 @@ function smartFormatPost(text, entities, timestamp) {
         } 
         else if (isDownloadLine) {
             if (downloadUrl) {
-                let cleanLine = trimmed.replace(/<[^>]*>/g, '').replace(/Download Now/gi, '').replace(/📱/g, '').trim();
-                let labelPart = cleanLine.replace(/➔|->|➜/g, '').trim();
-                if (!labelPart || labelPart.toLowerCase().includes('game link') || labelPart.toLowerCase().includes('link')) {
-                    formattedLines.push(`<b>🎰 ${finalGameName} LINK</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
-                } else {
-                    formattedLines.push(`<b>${labelPart}</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
-                }
+                let finalGameName = extractedGameName ? `${extractedGameName} LINK` : 'YONO GAME LINK';
+                formattedLines.push(`<b>🎰 ${finalGameName}</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
             } else {
                 formattedLines.push(trimmed);
             }
