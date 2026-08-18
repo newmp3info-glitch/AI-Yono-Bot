@@ -148,6 +148,15 @@ function addUpcomingGame(name, date) {
     fs.writeFileSync(UPCOMING_FILE, JSON.stringify(list, null, 2));
 }
 
+function getFormattedTimestamp() {
+    let now = new Date();
+    let optionsDate = { day: '2-digit', month: 'short', year: 'numeric' };
+    let optionsTime = { hour: '2-digit', minute: '2-digit', hour12: true };
+    let dateStr = now.toLocaleDateString('en-GB', optionsDate);
+    let timeStr = now.toLocaleTimeString('en-US', optionsTime).toLowerCase();
+    return `${dateStr}, ${timeStr}`;
+}
+
 function getSystemPrompt(userQuery) {
     let upcomingList = getUpcomingGames();
     let upcomingSection = upcomingList.length > 0 
@@ -304,9 +313,18 @@ function savePostContent(msg) {
             });
         }
 
+        // Format post text to ensure blockquotes and dynamic timestamp
+        let formattedText = rawText;
+        let timeStr = getFormattedTimestamp();
+
+        // If timestamp is not already in text, append/update it
+        if (!formattedText.includes("Date & Time:")) {
+            formattedText = formattedText.trim() + `\n\n🕒 Date & Time: ${timeStr}`;
+        }
+
         let postContent = {
             rawText: rawText,
-            text: rawText,
+            text: formattedText,
             photo: photo,
             replyMarkup: replyMarkup || null,
             timestamp: Date.now()
@@ -331,11 +349,11 @@ function processIncomingChannelPost(msg) {
             chatIdStr === targetClean) {
             const saved = savePostContent(msg);
             if (saved) {
-                let rawText = msg.caption || msg.text || '';
+                let latestPost = postDatabase.all_posts[postDatabase.all_posts.length - 1];
                 broadcastPostToAllUsers({
-                    text: rawText,
-                    photo: msg.photo ? msg.photo[msg.photo.length - 1].file_id : null,
-                    replyMarkup: msg.reply_markup || null
+                    text: latestPost.text,
+                    photo: latestPost.photo,
+                    replyMarkup: latestPost.replyMarkup
                 });
             }
         }
