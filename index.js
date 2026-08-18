@@ -205,14 +205,19 @@ try {
     postDatabase = JSON.parse(fs.readFileSync(POSTS_FILE, 'utf8'));
     if (!postDatabase.all_posts) postDatabase.all_posts = [];
     
-    // কঠোরভাবে ডাটাবেজ থেকে তীর চিহ্ন চিরতরে মুছে ফেলা হচ্ছে
+    // ডাটাবেজের সমস্ত পুরনো পোস্ট তাৎক্ষণিকভাবে রি-পার্স করে সকল তীর চিহ্ন চিরতরে মুছে ফেলা হচ্ছে
     let dbModified = false;
     postDatabase.all_posts.forEach(p => {
-        if (p.text) {
-            let cleaned = p.text.replace(/\s*(?:➔|->|➜)\s*LINK/gi, ' LINK');
-            cleaned = cleaned.replace(/<b>\s*🎰\s*([^<]+?)\s*(?:➔|->|➜)\s*LINK\s*<\/b>/gi, '<b>🎰 $1 LINK</b>');
-            if (cleaned !== p.text) {
-                p.text = cleaned;
+        if (p.rawText) {
+            let reFormatted = smartFormatPost(p.rawText, p.entities || [], p.timestamp || Date.now());
+            if (reFormatted && reFormatted !== p.text) {
+                p.text = reFormatted;
+                dbModified = true;
+            }
+        } else if (p.text) {
+            let cleanedOld = p.text.replace(/➔|->|➜/g, ' ');
+            if (cleanedOld !== p.text) {
+                p.text = cleanedOld;
                 dbModified = true;
             }
         }
@@ -376,11 +381,8 @@ function smartFormatPost(text, entities, timestamp) {
         nonEmtpyCount++;
 
         if (nonEmtpyCount === 1) {
-            let cleanLine = trimmed.replace(/<[^>]*>/g, '');
-            let nameParts = cleanLine.split(/➔|->|➜/);
-            if (nameParts.length > 0) {
-                extractedGameName = nameParts[0].replace(/new promo.*/gi, '').replace(/promo.*/gi, '').trim();
-            }
+            let cleanLine = trimmed.replace(/<[^>]*>/g, '').replace(/➔|->|➜/g, '').trim();
+            extractedGameName = cleanLine.split(/new promo|promo/i)[0].trim();
             formattedLines.push(`<b>${cleanLine}</b>`);
             return;
         }
@@ -400,11 +402,11 @@ function smartFormatPost(text, entities, timestamp) {
         );
 
         if (isGameListItem) {
-            let cleanItem = trimmed.replace(/<[^>]*>/g, '');
+            let cleanItem = trimmed.replace(/<[^>]*>/g, '').replace(/➔|->|➜/g, '');
             formattedLines.push(cleanItem);
         }
         else if (isQuoteLine) {
-            let cleanLine = trimmed.replace(/<[^>]*>/g, '');
+            let cleanLine = trimmed.replace(/<[^>]*>/g, '').replace(/➔|->|➜/g, '');
             formattedLines.push(`<blockquote><b>${cleanLine}</b></blockquote>`);
             
             if (lower.includes('join & pin') && !timestampAdded) {
@@ -413,29 +415,17 @@ function smartFormatPost(text, entities, timestamp) {
             }
         } 
         else if (isDownloadLine) {
+            let cleanGameName = extractedGameName ? extractedGameName.replace(/➔|->|➜/g, '').trim().toUpperCase() : 'YONO GAME';
+            // নিশ্চিত করা হয়েছে যে কোনো অবস্থাতেই গেমের নাম এবং LINK এর মাঝে তীর চিহ্ন থাকবে না
             if (downloadUrl) {
-                let cleanGameName = extractedGameName ? extractedGameName.replace(/➔|->|➜/g, '').trim().toUpperCase() : 'YONO GAME';
-                // গেমের নাম এবং LINK এর মাঝখানে কোনো তীর চিহ্ন ছাড়াই নিখুঁত আউটপুট
                 formattedLines.push(`<b>🎰 ${cleanGameName} LINK</b> <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
             } else {
-                let cleanFallback = trimmed.replace(/\s*(?:➔|->|➜)\s*LINK/gi, ' LINK');
-                formattedLines.push(cleanFallback);
+                formattedLines.push(`<b>🎰 ${cleanGameName} LINK</b> 📱`);
             }
         } 
         else {
-            // লিঙ্ক বা ডাউনলোডের কোনো লাইন এখানে এন্ট্রি নিতে পারবে না
-            if (!lower.includes('link') && !lower.includes('download') && (trimmed.includes('➔') || trimmed.includes('->') || trimmed.includes('➜'))) {
-                let parts = trimmed.split(/➔|->|➜/);
-                if (parts.length === 2) {
-                    let label = parts[0].replace(/<[^>]*>/g, '').trim();
-                    let codeOrDomain = parts[1].replace(/<[^>]*>/g, '').trim();
-                    let safeCode = codeOrDomain.replace(/\./g, '.\u200B');
-                    formattedLines.push(`<b>${label}</b> ➜ <code>${safeCode}</code>`);
-                    return;
-                }
-            }
-
-            let formattedLine = trimmed.replace(/(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z0-9][-a-zA-Z0-9]*[^\s]*\.(com|win|net|top|app|vip|in|store|club|xyz|buzz|bet)[^\s]*)/gi, (match) => {
+            let cleanedNormal = trimmed.replace(/➔|->|➜/g, '');
+            let formattedLine = cleanedNormal.replace(/(https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z0-9][-a-zA-Z0-9]*[^\s]*\.(com|win|net|top|app|vip|in|store|club|xyz|buzz|bet)[^\s]*)/gi, (match) => {
                 return `<code>${match.replace(/\./g, '.\u200B')}</code>`;
             });
 
