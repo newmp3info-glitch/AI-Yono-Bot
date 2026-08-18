@@ -166,7 +166,7 @@ function cleanStarsAndAddEmojis(text) {
 }
 
 
- function getSystemPrompt(userQuery) {
+  function getSystemPrompt(userQuery) {
     let upcomingList = getUpcomingGames();
     let upcomingSection = upcomingList.length > 0 
         ? "CURRENT UPCOMING GAMES LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n')
@@ -189,8 +189,9 @@ CRITICAL RULES YOU MUST FOLLOW STRICTLY:
    - **NEVER GENERATE, INVENT, OR MAKE UP ANY FICTIONAL PROMO CODES** (such as YONO1234 or random numbers/codes). You do not possess arbitrary codes. Promo codes are strictly stored in database posts or updated in the official channel. If a user asks for a promo code, never fabricate one.
 4. **ABSOLUTE BAN ON PLAY STORE, EXTERNAL CHANNELS & FAKE URLS (CRITICAL)**: 
    - **NEVER mention Google Play Store, Play Store, or downloading games from Play Store.** 
-   - **NEVER tell users to go to other Telegram channels, groups, or external links.** Do not redirect them elsewhere. State clearly that all updates, info, and services are managed directly through this bot.
-   - **ABSOLUTE BAN ON FAKE/INVENTED URLS**: **NEVER write, invent, or output any dummy, mock, or fake website links/URLs**. If a user asks for a link, tell them to type the exact official game name from the directory.
+   - **NEVER mention "inside the app" (অ্যাপের মধ্যে)** when telling users to search for games. Since this is a Telegram bot chat, always instruct users to **type the exact official game name right here in this chat** to get the stored link from the database.
+   - **NEVER tell users to go to other Telegram channels, groups, or external links.** 
+   - **ABSOLUTE BAN ON FAKE/INVENTED URLS**: **NEVER write, invent, or output any dummy, mock, or fake website links/URLs**. 
 5. **WITHDRAWAL & PAYMENT ISSUES**: 
    - Never provide external URL links or emails. 
    - Only advise the user that for withdrawal or payment issues, they must contact customer support directly from inside the specific game app.
