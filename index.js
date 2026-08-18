@@ -148,7 +148,6 @@ function addUpcomingGame(name, date) {
     fs.writeFileSync(UPCOMING_FILE, JSON.stringify(list, null, 2));
 }
 
-// Helper function to remove stars and add context-aware emojis
 function cleanStarsAndAddEmojis(text) {
     if (!text) return '';
     return text.replace(/\*\*(.*?)\*\*/g, (match, p1) => {
@@ -362,7 +361,6 @@ function smartFormatPost(text, entities, timestamp) {
 
         if (nonEmtpyCount === 1) {
             let cleanLine = trimmed.replace(/<[^>]*>/g, '');
-            // Extract game name from the first line (e.g. "YONO 777 ➔ ..." or "789JackPots → ...")
             let nameParts = cleanLine.split(/➔|->|➜/);
             if (nameParts.length > 0) {
                 extractedGameName = nameParts[0].replace(/new promo.*/gi, '').replace(/promo.*/gi, '').trim();
@@ -400,8 +398,8 @@ function smartFormatPost(text, entities, timestamp) {
         } 
         else if (isDownloadLine) {
             if (downloadUrl) {
-                let finalGameName = extractedGameName ? `${extractedGameName} LINK` : 'YONO GAME LINK';
-                formattedLines.push(`<b>🎰 ${finalGameName}</b> ➜ <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
+                let cleanGameName = extractedGameName ? extractedGameName.replace(/➔|->|➜/g, '').trim().toUpperCase() : 'YONO GAME';
+                formattedLines.push(`<b>🎰 ${cleanGameName} LINK ☞</b> <a href="${downloadUrl}"><b>Download Now</b></a>📱`);
             } else {
                 formattedLines.push(trimmed);
             }
