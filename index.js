@@ -148,6 +148,23 @@ function addUpcomingGame(name, date) {
     fs.writeFileSync(UPCOMING_FILE, JSON.stringify(list, null, 2));
 }
 
+// Helper function to remove stars and add context-aware emojis
+function cleanStarsAndAddEmojis(text) {
+    if (!text) return '';
+    return text.replace(/\*\*(.*?)\*\*/g, (match, p1) => {
+        let lower = p1.toLowerCase();
+        let emoji = '';
+        if (lower.includes('help') || lower.includes('support') || lower.includes('সাহায্য')) emoji = '🛟 ';
+        else if (lower.includes('game') || lower.includes('গেম')) emoji = '🎮 ';
+        else if (lower.includes('promo') || lower.includes('code') || lower.includes('কোড')) emoji = '🎁 ';
+        else if (lower.includes('bonus') || lower.includes('বোনাস')) emoji = '🎉 ';
+        else if (lower.includes('link') || lower.includes('লিংক')) emoji = '🔗 ';
+        else if (lower.includes('withdrawal') || lower.includes('amount') || lower.includes('টাকা')) emoji = '💰 ';
+        else emoji = '📌 ';
+        return `${emoji}${p1}`;
+    }).replace(/\*/g, '');
+}
+
 function getSystemPrompt(userQuery) {
     let upcomingList = getUpcomingGames();
     let upcomingSection = upcomingList.length > 0 
@@ -232,6 +249,9 @@ async function trackAndManageMessages(chatId, newIds) {
 }
 
 async function sendSingleMessage(chatId, text, photo, replyMarkup) {
+    // Clean stars and add contextual emojis before sending
+    let processedText = cleanStarsAndAddEmojis(text);
+
     const options = { 
         parse_mode: "HTML",
         disable_web_page_preview: true 
@@ -244,14 +264,14 @@ async function sendSingleMessage(chatId, text, photo, replyMarkup) {
     let sentMsg = null;
     try {
         if (photo) {
-            if (text && text.length > 1024) {
+            if (processedText && processedText.length > 1024) {
                 await bot.sendPhoto(chatId, photo, { reply_markup: options.reply_markup });
-                sentMsg = await bot.sendMessage(chatId, text, options);
+                sentMsg = await bot.sendMessage(chatId, processedText, options);
             } else {
-                sentMsg = await bot.sendPhoto(chatId, photo, { caption: text, ...options });
+                sentMsg = await bot.sendPhoto(chatId, photo, { caption: processedText, ...options });
             }
-        } else if (text) {
-            sentMsg = await bot.sendMessage(chatId, text, options);
+        } else if (processedText) {
+            sentMsg = await bot.sendMessage(chatId, processedText, options);
         }
 
         if (sentMsg) {
@@ -287,6 +307,7 @@ function formatPostTimestamp(timestamp) {
 
 function smartFormatPost(text, entities, timestamp) {
     if (!text) return '';
+    let cleanedInputText = cleanStarsAndAddEmojis(text);
     let downloadUrl = '';
     if (entities && entities.length > 0) {
         entities.forEach(entity => {
@@ -295,7 +316,7 @@ function smartFormatPost(text, entities, timestamp) {
                     downloadUrl = entity.url;
                 }
             } else if (entity.type === 'url') {
-                let extractedUrl = text.substring(entity.offset, entity.offset + entity.length);
+                let extractedUrl = cleanedInputText.substring(entity.offset, entity.offset + entity.length);
                 if (extractedUrl && !extractedUrl.includes('t.me') && !extractedUrl.includes('telegram')) {
                     downloadUrl = extractedUrl;
                 }
@@ -304,7 +325,7 @@ function smartFormatPost(text, entities, timestamp) {
     }
 
     if (!downloadUrl) {
-        let urlMatch = text.match(/(https?:\/\/[^\s<]+)/g);
+        let urlMatch = cleanedInputText.match(/(https?:\/\/[^\s<]+)/g);
         if (urlMatch) {
             for (let u of urlMatch) {
                 if (!u.includes('t.me') && !u.includes('telegram')) {
@@ -315,7 +336,7 @@ function smartFormatPost(text, entities, timestamp) {
         }
     }
 
-    let lines = text.split('\n');
+    let lines = cleanedInputText.split('\n');
     let formattedLines = [];
     let hashtags = [];
     let nonEmtpyCount = 0;
@@ -448,11 +469,27 @@ function savePostContent(msg) {
     return false;
 }
 
-bot.on('channel_post', (msg) => {
-    const chatUsername = msg.chat.username ? `@${msg.chat.username.toLowerCase()}` : '';
-    if (chatUsername === TARGET_CHANNEL.toLowerCase()) {
-        savePostContent(msg);
+// Improved robust channel post listeners (handles channel username matching correctly)
+function processIncomingChannelPost(msg) {
+    if (msg.chat) {
+        const chatUsername = msg.chat.username ? `@${msg.chat.username.trim().toLowerCase()}` : '';
+        const targetClean = TARGET_CHANNEL.trim().toLowerCase();
+        const chatIdStr = String(msg.chat.id);
+
+        if (chatUsername === targetClean || 
+            (msg.chat.username && msg.chat.username.toLowerCase() === targetClean.replace('@', '')) ||
+            chatIdStr === targetClean) {
+            savePostContent(msg);
+        }
     }
+}
+
+bot.on('channel_post', (msg) => {
+    processIncomingChannelPost(msg);
+});
+
+bot.on('edited_channel_post', (msg) => {
+    processIncomingChannelPost(msg);
 });
 
 async function handleUserQuery(chatId, queryText) {
@@ -623,7 +660,7 @@ bot.on('message', async (msg) => {
         return;
     }
 
-    if (msg.text && (msg.text.startsWith('/comingsoon' || msg.text.startsWith('/cominsoon')))) {
+    if (msg.text && (msg.text.startsWith('/comingsoon') || msg.text.startsWith('/cominsoon'))) {
         if (!ADMIN_CHAT_ID || chatId !== ADMIN_CHAT_ID) {
             await sendSingleMessage(chatId, `❌ <b>Access Denied!</b>\n\nYou are not authorized to use this command.`, null, null);
             return;
@@ -680,4 +717,4 @@ bot.on('message', async (msg) => {
     }
 });
 
-console.log("Yono Gaming Head AI bot running successfully with Robust Space-Insensitive Post Matching!");
+console.log("Yono Gaming Head AI bot running successfully with Robust Space-Insensitive Post Matching & Emoji Cleaning!");
