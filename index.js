@@ -166,7 +166,7 @@ function cleanStarsAndAddEmojis(text) {
 }
 
 
-  function getSystemPrompt(userQuery) {
+function getSystemPrompt(userQuery) {
     let upcomingList = getUpcomingGames();
     let upcomingSection = upcomingList.length > 0 
         ? "CURRENT UPCOMING GAMES LAUNCH SCHEDULE:\n" + upcomingList.map((g, idx) => `${idx + 1}. Game Name: ${g.name} | Launch Date: ${g.date}`).join('\n')
@@ -654,6 +654,7 @@ async function transcribeVoice(fileId) {
     }
 }
 
+// Cron job to automatically check and remove expired upcoming games (checks every minute, exact 8:00 AM match)
 cron.schedule('* * * * *', () => {
     getUpcomingGames();
 });
@@ -697,6 +698,31 @@ bot.on('message', async (msg) => {
             await sendSingleMessage(chatId, `✅ <b>New Official Game Added Successfully!</b>\n\n🎮 Added: <b>${cleanText}</b>\n📊 Total Official Games: <b>${allOfficial.length}</b>`, null, null);
         } else {
             await sendSingleMessage(chatId, `⚠️ <b>Invalid Format!</b>\nUse format like:\n<code>/addgame Gold Rummy</code>`, null, null);
+        }
+        return;
+    }
+
+    if (msg.text && msg.text.startsWith('/posts')) {
+        if (!ADMIN_CHAT_ID || chatId !== ADMIN_CHAT_ID) {
+            await sendSingleMessage(chatId, `❌ <b>Access Denied!</b>\n\nYou are not authorized to use this command.`, null, null);
+            return;
+        }
+
+        if (!postDatabase.all_posts || postDatabase.all_posts.length === 0) {
+            await sendSingleMessage(chatId, `📂 <b>Database is empty! No saved posts found.</b>`, null, null);
+            return;
+        }
+
+        let count = 1;
+        for (let i = 0; i < postDatabase.all_posts.length; i++) {
+            let p = postDatabase.all_posts[i];
+            let snippet = p.rawText ? p.rawText.substring(0, 80) + '...' : 'Media Post';
+            let keyboard = {
+                inline_keyboard: [
+                    [{ text: `❌ Delete Post #${i + 1}`, callback_data: `del_post_${i}` }]
+                ]
+            };
+            await sendSingleMessage(chatId, `📋 <b>Post ID Index:</b> <code>${i}</code>\n\n${snippet}`, p.photo, keyboard);
         }
         return;
     }
@@ -754,6 +780,38 @@ bot.on('message', async (msg) => {
             await sendSingleMessage(chatId, welcomeText, null, null);
         } else {
             await handleUserQuery(chatId, msg.text);
+        }
+    }
+});
+
+bot.on('callback_query', async (callbackQuery) => {
+    const msg = callbackQuery.message;
+    const chatId = msg.chat.id;
+    const data = callbackQuery.data;
+
+    if (data.startsWith('del_post_')) {
+        if (!ADMIN_CHAT_ID || chatId !== ADMIN_CHAT_ID) {
+            await bot.answerCallbackQuery(callbackQuery.id, { text: "❌ Access Denied!", show_alert: true });
+            return;
+        }
+
+        let indexStr = data.replace('del_post_', '');
+        let index = parseInt(indexStr, 10);
+
+        if (!isNaN(index) && postDatabase.all_posts && postDatabase.all_posts[index]) {
+            postDatabase.all_posts.splice(index, 1);
+            savePosts();
+
+            await bot.answerCallbackQuery(callbackQuery.id, { text: "✅ Post deleted successfully from database!" });
+            try {
+                await bot.editMessageText(`✅ <b>This post has been deleted from the database.</b>`, {
+                    chat_id: chatId,
+                    message_id: msg.message_id,
+                    parse_mode: 'HTML'
+                });
+            } catch (e) {}
+        } else {
+            await bot.answerCallbackQuery(callbackQuery.id, { text: "⚠️ Post already deleted or not found!", show_alert: true });
         }
     }
 });
