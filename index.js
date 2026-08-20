@@ -702,27 +702,38 @@ bot.on('message', async (msg) => {
         return;
     }
 
-    if (msg.text && msg.text.startsWith('/posts')) {
+    if (msg.text && (msg.text.startsWith('/delete/') || msg.text.startsWith('/delete '))) {
         if (!ADMIN_CHAT_ID || chatId !== ADMIN_CHAT_ID) {
             await sendSingleMessage(chatId, `❌ <b>Access Denied!</b>\n\nYou are not authorized to use this command.`, null, null);
             return;
         }
 
-        if (!postDatabase.all_posts || postDatabase.all_posts.length === 0) {
-            await sendSingleMessage(chatId, `📂 <b>Database is empty! No saved posts found.</b>`, null, null);
+        let queryGame = msg.text.replace('/delete/', '').replace('/delete', '').trim();
+        if (!queryGame) {
+            await sendSingleMessage(chatId, `⚠️ <b>Invalid Format!</b>\nPlease provide the game name to delete.\nExample: <code>/delete/YonoRummy</code>`, null, null);
             return;
         }
 
-        let count = 1;
-        for (let i = 0; i < postDatabase.all_posts.length; i++) {
-            let p = postDatabase.all_posts[i];
-            let snippet = p.rawText ? p.rawText.substring(0, 80) + '...' : 'Media Post';
-            let keyboard = {
-                inline_keyboard: [
-                    [{ text: `❌ Delete Post #${i + 1}`, callback_data: `del_post_${i}` }]
-                ]
-            };
-            await sendSingleMessage(chatId, `📋 <b>Post ID Index:</b> <code>${i}</code>\n\n${snippet}`, p.photo, keyboard);
+        let initialLength = postDatabase.all_posts.length;
+        let queryGameNorm = queryGame.toLowerCase().replace(/[\s._-]/g, '');
+
+        postDatabase.all_posts = postDatabase.all_posts.filter(p => {
+            let firstLine = p.text ? p.text.split('\n')[0].replace(/<[^>]*>/g, '').toLowerCase() : '';
+            let rawLower = p.rawText ? p.rawText.toLowerCase() : '';
+            let normFirstLine = firstLine.replace(/[\s._-]/g, '');
+            let normRawText = rawLower.replace(/[\s._-]/g, '');
+
+            let isMatch = normFirstLine.includes(queryGameNorm) || normRawText.includes(queryGameNorm);
+            return !isMatch;
+        });
+
+        let deletedCount = initialLength - postDatabase.all_posts.length;
+
+        if (deletedCount > 0) {
+            savePosts();
+            await sendSingleMessage(chatId, `✅ <b>Successfully deleted ${deletedCount} post(s) for game:</b> <code>${queryGame}</code>`, null, null);
+        } else {
+            await sendSingleMessage(chatId, `⚠️ <b>No matching posts found in database for:</b> <code>${queryGame}</code>`, null, null);
         }
         return;
     }
